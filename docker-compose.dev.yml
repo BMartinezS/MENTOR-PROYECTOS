@@ -1,0 +1,205 @@
+# ======================================
+# Docker Compose - Mentor de Proyectos
+# Desarrollo Local
+# ======================================
+
+services:
+  # =====================================
+  # PostgreSQL Database
+  # =====================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: mentor-postgres-dev
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-mentor_proyectos_dev}
+      POSTGRES_USER: ${POSTGRES_USER:-mentor_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dev_password}
+      POSTGRES_HOST_AUTH_METHOD: trust # Simplificado para desarrollo
+
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql:ro
+
+    ports:
+      - "${POSTGRES_PORT:-5433}:5432"
+
+    networks:
+      - mentor-dev-network
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-mentor_user} -d ${POSTGRES_DB:-mentor_proyectos_dev}"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # =====================================
+  # pgAdmin for Database Management
+  # =====================================
+  pgadmin:
+    image: dpage/pgadmin4:8
+    container_name: mentor-pgadmin-dev
+    restart: unless-stopped
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@mentor.dev}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin123}
+      PGADMIN_DISABLE_POSTFIX: true
+
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+
+    networks:
+      - mentor-dev-network
+
+  # =====================================
+  # Backend API Service (Development)
+  # =====================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: development
+
+    container_name: mentor-backend-dev
+    restart: unless-stopped
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+
+      # Database
+      DATABASE_URL: postgresql://${POSTGRES_USER:-mentor_user}:${POSTGRES_PASSWORD:-dev_password}@postgres:5432/${POSTGRES_DB:-mentor_proyectos_dev}
+      DATABASE_SSL: false
+
+      # JWT
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-key-change-in-production}
+
+      # CORS - Permisivo para desarrollo
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8081,http://localhost:19006,exp://localhost:8081}
+
+      # Services
+      AI_SERVICE_URL: http://ai-service:3001
+
+      # Features - Habilitadas para desarrollo
+      ENABLE_CHECKIN_SCHEDULER: ${ENABLE_CHECKIN_SCHEDULER:-false}
+      ENABLE_WEEKLY_REVIEW_SCHEDULER: ${ENABLE_WEEKLY_REVIEW_SCHEDULER:-false}
+      WEEKLY_REVIEW_TARGET_HOURS: ${WEEKLY_REVIEW_TARGET_HOURS:-5}
+      DB_SYNC: ${DB_SYNC:-true}
+
+      # RevenueCat - Mock para desarrollo
+      REVENUECAT_WEBHOOK_SECRET: ${REVENUECAT_WEBHOOK_SECRET:-dev-webhook-secret}
+
+    ports:
+      - "${BACKEND_PORT:-3000}:3000"
+
+    volumes:
+      # Volume para hot reload en desarrollo
+      - ./backend/src:/app/src:ro
+      - ./backend/package.json:/app/package.json:ro
+      - backend_dev_logs:/app/logs
+
+    networks:
+      - mentor-dev-network
+
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+    # Comando para desarrollo con nodemon
+    command: ["npm", "run", "dev"]
+
+  # =====================================
+  # AI Service (Development)
+  # =====================================
+  ai-service:
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+      target: development
+
+    container_name: mentor-ai-service-dev
+    restart: unless-stopped
+
+    environment:
+      NODE_ENV: development
+      PORT: 3001
+
+      # OpenAI
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+
+      # Rate Limiting - Más permisivo en desarrollo
+      RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-300000}
+      RATE_LIMIT_MAX_REQUESTS: ${RATE_LIMIT_MAX_REQUESTS:-100}
+
+    ports:
+      - "${AI_SERVICE_PORT:-3001}:3001"
+
+    volumes:
+      # Volume para hot reload en desarrollo
+      - ./ai-service/src:/app/src:ro
+      - ./ai-service/package.json:/app/package.json:ro
+      - ai_dev_logs:/app/logs
+      - ai_dev_cache:/app/cache
+
+    networks:
+      - mentor-dev-network
+
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:3001/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+    # Comando para desarrollo con nodemon
+    command: ["npm", "run", "dev"]
+
+# =====================================
+# Networks
+# =====================================
+networks:
+  mentor-dev-network:
+    driver: bridge
+    name: mentor-dev-network
+
+# =====================================
+# Volumes
+# =====================================
+volumes:
+  postgres_dev_data:
+    name: mentor_postgres_dev_data
+    driver: local
+
+  pgadmin_data:
+    name: mentor_pgadmin_data
+    driver: local
+
+  backend_dev_logs:
+    name: mentor_backend_dev_logs
+    driver: local
+
+  ai_dev_logs:
+    name: mentor_ai_dev_logs
+    driver: local
+
+  ai_dev_cache:
+    name: mentor_ai_dev_cache
+    driver: local

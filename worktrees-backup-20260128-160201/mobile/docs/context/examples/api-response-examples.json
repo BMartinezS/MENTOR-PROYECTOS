@@ -1,0 +1,290 @@
+{
+  "_comment": "Ejemplos de responses de API para referencia",
+
+  "auth": {
+    "POST /api/auth/register": {
+      "request": {
+        "email": "user@example.com",
+        "password": "securePassword123",
+        "name": "Juan García"
+      },
+      "response_201": {
+        "user": {
+          "id": "uuid-123-456",
+          "email": "user@example.com",
+          "name": "Juan García",
+          "tier": "free",
+          "createdAt": "2025-01-17T10:00:00Z"
+        },
+        "token": "eyJhbGciOiJIUzI1NiIs..."
+      },
+      "response_400": {
+        "error": "Email already registered"
+      }
+    },
+
+    "POST /api/auth/login": {
+      "request": {
+        "email": "user@example.com",
+        "password": "securePassword123"
+      },
+      "response_200": {
+        "user": {
+          "id": "uuid-123-456",
+          "email": "user@example.com",
+          "name": "Juan García",
+          "tier": "pro"
+        },
+        "token": "eyJhbGciOiJIUzI1NiIs..."
+      },
+      "response_401": {
+        "error": "Invalid credentials"
+      }
+    }
+  },
+
+  "projects": {
+    "GET /api/projects": {
+      "response_200": {
+        "data": [
+          {
+            "id": "proj-123",
+            "title": "Lanzar mi SaaS",
+            "description": "App de productividad para freelancers",
+            "status": "active",
+            "progress": 35,
+            "targetDate": "2025-06-01",
+            "hoursPerWeek": 10,
+            "currentPhase": {
+              "id": "phase-1",
+              "name": "MVP Development",
+              "order": 2
+            },
+            "createdAt": "2025-01-15T10:00:00Z"
+          }
+        ],
+        "pagination": {
+          "total": 1,
+          "page": 1,
+          "limit": 50
+        }
+      }
+    },
+
+    "POST /api/projects": {
+      "request": {
+        "title": "Lanzar mi SaaS",
+        "description": "App de productividad para freelancers",
+        "targetDate": "2025-06-01",
+        "hoursPerWeek": 10
+      },
+      "response_201": {
+        "id": "proj-123",
+        "title": "Lanzar mi SaaS",
+        "status": "active",
+        "progress": 0
+      }
+    },
+
+    "GET /api/projects/:id": {
+      "response_200": {
+        "id": "proj-123",
+        "title": "Lanzar mi SaaS",
+        "description": "App de productividad para freelancers",
+        "status": "active",
+        "progress": 35,
+        "targetDate": "2025-06-01",
+        "hoursPerWeek": 10,
+        "phases": [
+          {
+            "id": "phase-1",
+            "name": "Investigación",
+            "order": 1,
+            "status": "completed",
+            "milestones": [
+              {
+                "id": "mile-1",
+                "title": "Definir propuesta de valor",
+                "dueDate": "2025-01-20",
+                "completed": true
+              }
+            ]
+          },
+          {
+            "id": "phase-2",
+            "name": "MVP Development",
+            "order": 2,
+            "status": "in_progress",
+            "milestones": []
+          }
+        ],
+        "tasks": [
+          {
+            "id": "task-1",
+            "title": "Diseñar wireframes",
+            "status": "completed",
+            "priority": "high",
+            "estimatedHours": 4
+          },
+          {
+            "id": "task-2",
+            "title": "Configurar proyecto React",
+            "status": "in_progress",
+            "priority": "high",
+            "estimatedHours": 2
+          }
+        ]
+      },
+      "response_404": {
+        "error": "Project not found"
+      }
+    }
+  },
+
+  "checkins": {
+    "GET /api/checkins/pending": {
+      "response_200": {
+        "data": [
+          {
+            "id": "checkin-123",
+            "projectId": "proj-123",
+            "projectTitle": "Lanzar mi SaaS",
+            "message": "¡Hola Juan! ¿Cómo va el diseño de wireframes? Ayer mencionaste que ibas a terminarlo.",
+            "status": "pending",
+            "createdAt": "2025-01-17T09:00:00Z"
+          }
+        ]
+      }
+    },
+
+    "POST /api/checkins/:id/respond": {
+      "request": {
+        "status": "completed",
+        "notes": "Terminé los wireframes, quedaron mejor de lo esperado"
+      },
+      "response_200": {
+        "id": "checkin-123",
+        "status": "completed",
+        "notes": "Terminé los wireframes, quedaron mejor de lo esperado",
+        "sentiment": "positive",
+        "respondedAt": "2025-01-17T11:30:00Z"
+      }
+    }
+  },
+
+  "ai": {
+    "POST /api/ai/generate-plan": {
+      "request": {
+        "idea": "Quiero lanzar una app de recetas saludables para busy professionals",
+        "hoursPerWeek": 8,
+        "targetDate": "2025-04-01"
+      },
+      "response_200": {
+        "title": "App de Recetas Saludables para Profesionales",
+        "objectives": [
+          "Validar demanda con 50 usuarios beta",
+          "Lanzar MVP con 20 recetas",
+          "Alcanzar 500 descargas en primer mes"
+        ],
+        "phases": [
+          {
+            "name": "Investigación y Validación",
+            "description": "Entender el mercado y validar la idea",
+            "order": 1,
+            "estimatedWeeks": 2,
+            "milestones": [
+              {
+                "title": "Completar 10 entrevistas con usuarios potenciales",
+                "dueDate": "2025-01-24"
+              }
+            ]
+          },
+          {
+            "name": "MVP Development",
+            "description": "Crear versión mínima funcional",
+            "order": 2,
+            "estimatedWeeks": 6,
+            "milestones": [
+              {
+                "title": "App funcional con 20 recetas",
+                "dueDate": "2025-03-01"
+              }
+            ]
+          },
+          {
+            "name": "Lanzamiento",
+            "description": "Publicar y promocionar",
+            "order": 3,
+            "estimatedWeeks": 3,
+            "milestones": [
+              {
+                "title": "App publicada en App Store y Play Store",
+                "dueDate": "2025-03-20"
+              }
+            ]
+          }
+        ],
+        "initialTasks": [
+          {
+            "title": "Crear perfil de usuario ideal",
+            "description": "Definir demographics, pain points y jobs-to-be-done",
+            "estimatedHours": 2,
+            "priority": "high",
+            "dueDate": "2025-01-18"
+          },
+          {
+            "title": "Preparar guía de entrevistas",
+            "description": "10 preguntas para validar hipótesis principales",
+            "estimatedHours": 1,
+            "priority": "high",
+            "dueDate": "2025-01-19"
+          },
+          {
+            "title": "Identificar 15 potenciales entrevistados",
+            "description": "Buscar en LinkedIn, comunidades de fitness, grupos de WhatsApp",
+            "estimatedHours": 3,
+            "priority": "high",
+            "dueDate": "2025-01-20"
+          }
+        ]
+      }
+    }
+  },
+
+  "errors": {
+    "400_validation": {
+      "error": "Validation failed",
+      "details": [
+        {
+          "field": "email",
+          "message": "Invalid email format"
+        },
+        {
+          "field": "password",
+          "message": "Password must be at least 8 characters"
+        }
+      ]
+    },
+    "401_unauthorized": {
+      "error": "Unauthorized",
+      "message": "Invalid or expired token"
+    },
+    "403_forbidden": {
+      "error": "Forbidden",
+      "message": "You don't have permission to access this resource"
+    },
+    "404_not_found": {
+      "error": "Not found",
+      "message": "Resource not found"
+    },
+    "429_rate_limit": {
+      "error": "Too many requests",
+      "message": "Rate limit exceeded. Try again in 60 seconds",
+      "retryAfter": 60
+    },
+    "500_server_error": {
+      "error": "Internal server error",
+      "message": "Something went wrong. Please try again later"
+    }
+  }
+}

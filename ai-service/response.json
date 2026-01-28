@@ -1,0 +1,79 @@
+{
+  "id": "resp_0dd324c4009380d700696e67e8fc0881949112ace765882524",
+  "object": "response",
+  "created_at": 1768843241,
+  "status": "incomplete",
+  "background": false,
+  "billing": {
+    "payer": "developer"
+  },
+  "completed_at": null,
+  "error": null,
+  "frequency_penalty": 0,
+  "incomplete_details": {
+    "reason": "max_output_tokens"
+  },
+  "instructions": "Eres un mentor de proyectos experto. Respondes SOLO con JSON válido.",
+  "max_output_tokens": 900,
+  "max_tool_calls": null,
+  "model": "gpt-5-nano-2025-08-07",
+  "output": [
+    {
+      "id": "rs_0dd324c4009380d700696e67e95a048194869a7ff04737e033",
+      "type": "reasoning",
+      "summary": []
+    },
+    {
+      "id": "msg_0dd324c4009380d700696e67ed6a388194a01b28328f158846",
+      "type": "message",
+      "status": "incomplete",
+      "content": [
+        {
+          "type": "output_text",
+          "annotations": [],
+          "logprobs": [],
+          "text": "{\n  \"title\": \"Lanzar una newsletter premium para makers\",\n  \"objectives\": [\n    \"Definir oferta, precio y propuesta de valor para la newsletter premium.\",\n    \"Configurar plataforma, flujo de suscripción y plantilla de correo.\",\n    \"Lanzar versión piloto y recoger feedback para iterar.\"\n  ],\n  \"phases\": [\n    {\n      \"name\": \"Definición de oferta y audiencia\",\n      \"description\": \"Definir la propuesta de valor, segmentación de audiencia objetivo y validar interés mediante encuestas rápidas.\",\n      \"order\": 1,\n      \"milestones\": [\n        {\n          \"title\": \"Propuesta de valor y pricing definidos\",\n          \"dueDate\": \"2026-01-15\"\n        },\n        {\n          \"title\": \"Audiencia objetivo segmentada y interés validado\",\n          \"dueDate\": \"2026-01-15\"\n        }\n      ]\n    },\n    {\n      \"name\": \"Configuración técnica y diseño\",\n      \"description\": \"Seleccionar plataforma, configurar suscripción y crear la plantilla del newsletter.\",\n      \"order\": 2,\n      \"milestones\": [\n        {\n          \"title\": \"Plataforma elegida y configuración básica\",\n          \"dueDate\": \"2026-02-15\"\n        },\n        {\n          \"title\": \"Plantilla de newsletter diseñada y aprobada\",\n          \"dueDate\": \"2026-02-15\"\n        }\n      ]\n    },\n    {\n      \"name\": \""
+        }
+      ],
+      "role": "assistant"
+    }
+  ],
+  "parallel_tool_calls": true,
+  "presence_penalty": 0,
+  "previous_response_id": null,
+  "prompt_cache_key": null,
+  "prompt_cache_retention": null,
+  "reasoning": {
+    "effort": "low",
+    "summary": null
+  },
+  "safety_identifier": null,
+  "service_tier": "default",
+  "store": true,
+  "temperature": 1,
+  "text": {
+    "format": {
+      "type": "json_object"
+    },
+    "verbosity": "medium"
+  },
+  "tool_choice": "auto",
+  "tools": [],
+  "top_logprobs": 0,
+  "top_p": 1,
+  "truncation": "disabled",
+  "usage": {
+    "input_tokens": 365,
+    "input_tokens_details": {
+      "cached_tokens": 0
+    },
+    "output_tokens": 892,
+    "output_tokens_details": {
+      "reasoning_tokens": 576
+    },
+    "total_tokens": 1257
+  },
+  "user": null,
+  "metadata": {},
+  "output_text": "{\n  \"title\": \"Lanzar una newsletter premium para makers\",\n  \"objectives\": [\n    \"Definir oferta, precio y propuesta de valor para la newsletter premium.\",\n    \"Configurar plataforma, flujo de suscripción y plantilla de correo.\",\n    \"Lanzar versión piloto y recoger feedback para iterar.\"\n  ],\n  \"phases\": [\n    {\n      \"name\": \"Definición de oferta y audiencia\",\n      \"description\": \"Definir la propuesta de valor, segmentación de audiencia objetivo y validar interés mediante encuestas rápidas.\",\n      \"order\": 1,\n      \"milestones\": [\n        {\n          \"title\": \"Propuesta de valor y pricing definidos\",\n          \"dueDate\": \"2026-01-15\"\n        },\n        {\n          \"title\": \"Audiencia objetivo segmentada y interés validado\",\n          \"dueDate\": \"2026-01-15\"\n        }\n      ]\n    },\n    {\n      \"name\": \"Configuración técnica y diseño\",\n      \"description\": \"Seleccionar plataforma, configurar suscripción y crear la plantilla del newsletter.\",\n      \"order\": 2,\n      \"milestones\": [\n        {\n          \"title\": \"Plataforma elegida y configuración básica\",\n          \"dueDate\": \"2026-02-15\"\n        },\n        {\n          \"title\": \"Plantilla de newsletter diseñada y aprobada\",\n          \"dueDate\": \"2026-02-15\"\n        }\n      ]\n    },\n    {\n      \"name\": \""
+}

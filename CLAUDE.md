@@ -81,23 +81,29 @@
 ```
 mentor-proyectos/
 ├── backend/
-│   └── src/
-│       ├── models/       # Sequelize models (User, Project, Task, etc.)
-│       ├── services/     # Business logic (TODA la lógica va aquí)
-│       ├── controllers/  # HTTP handlers (solo llaman a services)
-│       ├── routes/       # Express routes (solo definen endpoints)
-│       ├── middleware/   # Auth, validation, error handling
-│       └── config/       # DB, env configs
+│   ├── src/
+│   │   ├── models/       # Sequelize models (User, Project, Task, etc.)
+│   │   ├── services/     # Business logic (TODA la lógica va aquí)
+│   │   ├── controllers/  # HTTP handlers (solo llaman a services)
+│   │   ├── routes/       # Express routes (solo definen endpoints)
+│   │   ├── middleware/   # Auth, validation, error handling
+│   │   └── config/       # DB, env configs
+│   ├── tests/           # Tests del backend
+│   └── Dockerfile       # Docker configuration
 ├── mobile/
-│   └── app/
-│       ├── (auth)/       # Pantallas de login/register
-│       ├── (tabs)/       # Dashboard, checkins, profile
-│       └── contexts/     # AuthContext, etc.
-└── ai-service/
-    └── src/
-        ├── prompts/      # Templates de prompts
-        ├── services/     # Llamadas a OpenAI
-        └── validators/   # Validación de responses
+│   ├── app/
+│   │   ├── (auth)/      # Pantallas de login/register
+│   │   ├── (tabs)/      # Dashboard, checkins, profile
+│   │   └── contexts/    # AuthContext, etc.
+│   └── constants/       # Themes y configuraciones
+├── ai-service/
+│   ├── src/
+│   │   ├── prompts/     # Templates de prompts
+│   │   ├── services/    # Llamadas a OpenAI
+│   │   └── validators/  # Validación de responses
+│   ├── tests/          # Tests del AI service
+│   └── Dockerfile      # Docker configuration
+└── docs/               # Documentación del proyecto
 ```
 
 ### Naming Conventions
@@ -179,7 +185,7 @@ Implementa [feature] siguiendo:
 - AI-GUIDELINES.md para estilo de código
 - CLAUDE.md para convenciones
 
-Trabajar SOLO en carpeta /[backend|mobile|ai-service].
+Trabajar SOLO en carpeta [backend|mobile|ai-service].
 Incluir tests con 80%+ coverage.
 ```
 
@@ -233,6 +239,13 @@ No cambiar:
 ---
 
 ## 🔄 Actualizaciones Recientes (Changelog Interno)
+
+### 2025-01-28
+- ✅ Migración de worktrees a estructura monorepo normal
+- ✅ Sistema de pagos RevenueCat completamente implementado
+- ✅ Dockerización completa del stack (backend + ai-service + postgres)
+- ✅ Notificaciones push configuradas con Expo
+- ✅ Testing automatizado configurado para mobile
 
 ### 2025-01-17
 - ✅ Cambiamos de React web a React Native + Expo

@@ -1,6 +1,49 @@
-﻿node_modules/
+﻿# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment variables (contienen secrets)
 .env
+.env.local
+.env.development
+.env.production
+
+# Logs
 *.log
-.DS_Store
+logs/
+
+# Build artifacts
 dist/
 build/
+coverage/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Docker volumes y data
+docker-volumes/
+postgres_data/
+*.sql
+
+# Backups de base de datos
+backup_*.sql
+
+# Node modules in each service
+backend/node_modules/
+mobile/node_modules/
+ai-service/node_modules/
+
+# Git worktrees (legacy - to be removed)
+# worktrees/

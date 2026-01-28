@@ -1,0 +1,123 @@
+import { useState } from 'react';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import { Button, HelperText, Text, TextInput } from 'react-native-paper';
+
+import { Link } from 'expo-router';
+
+import { COLORS, RADIUS, SPACING } from '../../constants/theme';
+import Screen from '../components/Screen';
+import { useAuth } from '../contexts/AuthContext';
+
+export default function LoginScreen() {
+  const { login } = useAuth();
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const onSubmit = async () => {
+    try {
+      setSubmitting(true);
+      setError(null);
+      await login(email.trim(), password);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'No se pudo iniciar sesión');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Screen padded={false}>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={styles.hero}>
+          <Text style={styles.badge}>Mentor Proyectos</Text>
+          <Text variant="displaySmall" style={styles.heroTitle}>
+            Bienvenido de vuelta 🧠
+          </Text>
+          <Text style={styles.heroSubtitle}>Continúa donde lo dejaste.</Text>
+        </View>
+
+        <View style={styles.card}>
+          <Text variant="titleLarge">Iniciar sesión</Text>
+          <Text style={styles.cardSubtitle}>Accede a tus proyectos y check-ins.</Text>
+
+          <TextInput
+            label="Email"
+            autoCapitalize="none"
+            keyboardType="email-address"
+            value={email}
+            onChangeText={setEmail}
+            style={styles.input}
+          />
+          <TextInput
+            label="Contraseña"
+            secureTextEntry
+            value={password}
+            onChangeText={setPassword}
+            style={styles.input}
+          />
+
+          {error ? <HelperText type="error">{error}</HelperText> : null}
+
+          <Button mode="contained" onPress={onSubmit} loading={submitting} disabled={submitting}>
+            Entrar
+          </Button>
+
+          <View style={styles.footer}>
+            <Text style={styles.secondary}>¿No tienes cuenta?</Text>
+            <Link href="/(auth)/register" style={styles.link}>
+              Crear cuenta
+            </Link>
+          </View>
+        </View>
+      </ScrollView>
+    </Screen>
+  );
+}
+
+const styles = StyleSheet.create({
+  scrollContent: {
+    padding: SPACING(3),
+    gap: SPACING(2),
+  },
+  hero: {
+    gap: SPACING(1),
+    marginTop: SPACING(2),
+  },
+  badge: {
+    color: COLORS.primary,
+    fontWeight: '600',
+  },
+  heroTitle: {
+    color: COLORS.text,
+  },
+  heroSubtitle: {
+    color: COLORS.textMuted,
+  },
+  card: {
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.lg,
+    padding: SPACING(3),
+    gap: SPACING(1),
+  },
+  cardSubtitle: {
+    color: COLORS.textMuted,
+  },
+  input: {
+    backgroundColor: COLORS.surface,
+  },
+  footer: {
+    flexDirection: 'row',
+    gap: SPACING(1),
+    marginTop: SPACING(1),
+  },
+  secondary: {
+    color: COLORS.textMuted,
+  },
+  link: {
+    color: COLORS.primary,
+    fontWeight: '600',
+  },
+});

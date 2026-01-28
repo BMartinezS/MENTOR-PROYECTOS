@@ -1,0 +1,42 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm test*)",
+      "Bash(npm run lint*)",
+      "Bash(npm run build*)",
+      "Bash(npm install*)",
+      "Bash(npx prettier*)",
+      "Bash(npx eslint*)",
+      "Bash(npx expo*)",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git branch*)",
+      "Bash(git add*)",
+      "Bash(git commit*)",
+      "Bash(git push*)",
+      "Bash(git checkout*)",
+      "Bash(git pull*)",
+      "Bash(git fetch*)",
+      "Bash(ls*)",
+      "Bash(dir*)",
+      "Bash(cat*)",
+      "Bash(mkdir*)",
+      "Bash(cd*)",
+      "Bash(pwd)"
+    ],
+    "deny": [
+      "Bash(rm -rf /)",
+      "Bash(*--force*)",
+      "Bash(*:env*)",
+      "Bash(*password*)",
+      "Bash(*secret*)",
+      "Bash(git push --force*)",
+      "Bash(git reset --hard*)",
+      "Bash(DROP TABLE*)",
+      "Bash(DELETE FROM*)"
+    ]
+  },
+  "model": "claude-sonnet-4-20250514",
+  "customInstructions": "Siempre leer CLAUDE.md antes de implementar cualquier feature. Usar Planning Mode para features complejas. Ejecutar tests antes de commit."
+}

@@ -1,0 +1,167 @@
+# ======================================
+# Docker Compose - Mentor de Proyectos
+# Producción y Staging
+# ======================================
+
+services:
+  # =====================================
+  # PostgreSQL Database
+  # =====================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: mentor-postgres
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-mentor_proyectos}
+      POSTGRES_USER: ${POSTGRES_USER:-mentor_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_HOST_AUTH_METHOD: scram-sha-256
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql:ro
+
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+
+    networks:
+      - mentor-network
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-mentor_user} -d ${POSTGRES_DB:-mentor_proyectos}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # =====================================
+  # Backend API Service
+  # =====================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: production
+
+    container_name: mentor-backend
+    restart: unless-stopped
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+
+      # Database
+      DATABASE_URL: postgresql://${POSTGRES_USER:-mentor_user}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-mentor_proyectos}
+      DATABASE_SSL: false
+
+      # JWT
+      JWT_SECRET: ${JWT_SECRET}
+
+      # CORS
+      CORS_ORIGINS: ${CORS_ORIGINS}
+
+      # Services
+      AI_SERVICE_URL: http://ai-service:3001
+
+      # Features
+      ENABLE_CHECKIN_SCHEDULER: ${ENABLE_CHECKIN_SCHEDULER:-true}
+      ENABLE_WEEKLY_REVIEW_SCHEDULER: ${ENABLE_WEEKLY_REVIEW_SCHEDULER:-true}
+      WEEKLY_REVIEW_TARGET_HOURS: ${WEEKLY_REVIEW_TARGET_HOURS:-10}
+      DB_SYNC: ${DB_SYNC:-false}
+
+      # RevenueCat
+      REVENUECAT_WEBHOOK_SECRET: ${REVENUECAT_WEBHOOK_SECRET}
+
+      # Expo Push Notifications
+      EXPO_ACCESS_TOKEN: ${EXPO_ACCESS_TOKEN}
+
+    ports:
+      - "${BACKEND_PORT:-3000}:3000"
+
+    volumes:
+      - backend_logs:/app/logs
+
+    networks:
+      - mentor-network
+
+    healthcheck:
+      test: ["CMD", "node", "-e", "const http = require('http'); const options = { hostname: 'localhost', port: 3000, path: '/health', timeout: 2000 }; const req = http.request(options, (res) => process.exit(res.statusCode === 200 ? 0 : 1)); req.on('error', () => process.exit(1)); req.end();"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # =====================================
+  # AI Service
+  # =====================================
+  ai-service:
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+      target: production
+
+    container_name: mentor-ai-service
+    restart: unless-stopped
+
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+
+      # OpenAI
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+
+      # Rate Limiting
+      RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-900000}
+      RATE_LIMIT_MAX_REQUESTS: ${RATE_LIMIT_MAX_REQUESTS:-50}
+
+    ports:
+      - "${AI_SERVICE_PORT:-3001}:3001"
+
+    volumes:
+      - ai_logs:/app/logs
+      - ai_cache:/app/cache
+
+    networks:
+      - mentor-network
+
+    healthcheck:
+      test: ["CMD", "node", "-e", "const http = require('http'); const options = { hostname: 'localhost', port: 3001, path: '/health', timeout: 8000 }; const req = http.request(options, (res) => process.exit(res.statusCode === 200 ? 0 : 1)); req.on('error', () => process.exit(1)); req.end();"]
+      interval: 30s
+      timeout: 15s
+      retries: 3
+      start_period: 30s
+
+# =====================================
+# Networks
+# =====================================
+networks:
+  mentor-network:
+    driver: bridge
+    name: mentor-network
+
+# =====================================
+# Volumes
+# =====================================
+volumes:
+  postgres_data:
+    name: mentor_postgres_data
+    driver: local
+
+  backend_logs:
+    name: mentor_backend_logs
+    driver: local
+
+  ai_logs:
+    name: mentor_ai_logs
+    driver: local
+
+  ai_cache:
+    name: mentor_ai_cache
+    driver: local

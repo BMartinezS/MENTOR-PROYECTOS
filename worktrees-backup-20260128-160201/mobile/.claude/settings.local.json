@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir \"D:\\\\Proyectos personales\\\\mentor-proyectos\")",
+      "Bash(node test-imports.js:*)",
+      "Bash(taskkill:*)"
+    ]
+  }
+}

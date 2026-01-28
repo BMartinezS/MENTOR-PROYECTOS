@@ -1,0 +1,52 @@
+{
+  "expo": {
+    "name": "Mentor de Proyectos",
+    "slug": "mentor-proyectos",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "splash": {
+      "image": "./assets/images/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#050312"
+    },
+    "ios": {
+      "infoPlist": {
+        "UIBackgroundModes": ["background-fetch", "remote-notification"]
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#050312"
+      },
+      "permissions": [
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.VIBRATE",
+        "android.permission.WAKE_LOCK"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/images/favicon.png"
+    },
+    "platforms": ["ios", "android"],
+    "extra": {
+      "apiUrl": "http://localhost:3000/api",
+      "eas": {
+        "projectId": "12345678-1234-1234-1234-123456789abc"
+      }
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#00F5FF",
+          "defaultChannel": "default"
+        }
+      ]
+    ],
+    "assetBundlePatterns": ["**/*"]
+  }
+}

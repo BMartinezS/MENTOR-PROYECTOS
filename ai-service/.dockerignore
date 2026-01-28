@@ -1,0 +1,83 @@
+# ======================================
+# .dockerignore para AI Service
+# ======================================
+
+# Node.js
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Archivos de environment (contienen secrets, especialmente OpenAI API Key)
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Logs
+logs
+*.log
+
+# Coverage y testing
+coverage/
+.coverage
+.nyc_output
+junit.xml
+
+# Build artifacts
+dist/
+build/
+
+# Archivos temporales y cache
+temp/
+tmp/
+cache/
+*.tmp
+*.temp
+
+# Respuestas de OpenAI guardadas localmente (pueden contener datos sensibles)
+response.json
+*.response.json
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Git
+.git
+.gitignore
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Documentación
+README.md
+CHANGELOG.md
+LICENSE
+*.md
+
+# Jest y testing
+jest.config.js
+tests/
+__tests__/
+*.test.js
+*.spec.js
+
+# Archivos específicos del AI service
+prompts-backup/
+model-cache/
