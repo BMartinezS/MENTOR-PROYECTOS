@@ -195,6 +195,19 @@ export type TaskUpdateRequest = {
   checklistUpdates?: { id: string; completed: boolean }[];
 };
 
+export type CreateTaskRequest = {
+  title: string;
+  description?: string | null;
+  priority?: Task['priority'];
+  dueDate?: string | null;
+  phaseId?: string | null;
+};
+
+export type DeleteTaskResponse = {
+  success: boolean;
+  message: string;
+};
+
 export type PlanIteration = {
   id: string;
   projectId: string;
@@ -271,4 +284,14 @@ export type UpdateIdeaRequest = {
 export type PromoteIdeaResponse = {
   idea: Idea;
   project: Project;
+};
+
+export type IdeaChatRequest = {
+  message: string;
+};
+
+export type IdeaChatResponse = {
+  response: string;
+  ideaId: string;
+  ideaTitle: string;
 };

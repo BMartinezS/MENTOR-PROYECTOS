@@ -2,7 +2,7 @@ import * as IdeaService from '../services/idea-service.js';
 
 export async function create(req, res, next) {
   try {
-    const idea = await IdeaService.create(req.user.id, req.body);
+    const idea = await IdeaService.create(req.user, req.body);
     res.status(201).json(idea);
   } catch (err) {
     next(err);
@@ -75,6 +75,15 @@ export async function promoteToProject(req, res, next) {
   try {
     const result = await IdeaService.promoteToProject(req.user, req.params.id);
     res.status(201).json(result);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function chat(req, res, next) {
+  try {
+    const result = await IdeaService.chat(req.user, req.params.id, req.body.message);
+    res.json(result);
   } catch (err) {
     next(err);
   }

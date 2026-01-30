@@ -4,9 +4,37 @@ import sequelize from '../config/database.js';
 import { AppError } from '../errors/app-error.js';
 import { Idea, Project } from '../models/index.js';
 
+// Limits for free tier
+const FREE_IDEAS_LIMIT = 5;
+
+/**
+ * Check idea limit for free users
+ */
+async function enforceIdeaLimit(userId, userTier) {
+  if (userTier === 'pro') return;
+
+  const count = await Idea.count({
+    where: {
+      userId,
+      status: { [Op.ne]: 'archived' },
+    },
+  });
+
+  if (count >= FREE_IDEAS_LIMIT) {
+    throw new AppError(`Free plan permite hasta ${FREE_IDEAS_LIMIT} ideas activas`, {
+      statusCode: 403,
+      code: 'free_idea_limit',
+      details: {
+        currentCount: count,
+        limit: FREE_IDEAS_LIMIT,
+      },
+    });
+  }
+}
+
 /**
  * Create a new idea
- * @param {string} userId - User ID
+ * @param {Object} user - User object with id and tier
  * @param {Object} data - Idea data
  * @param {string} data.title - Idea title (required)
  * @param {string} [data.description] - Idea description
@@ -14,9 +42,11 @@ import { Idea, Project } from '../models/index.js';
  * @param {number} [data.priority] - Priority order
  * @returns {Promise<Idea>}
  */
-export async function create(userId, { title, description, tags, priority }) {
+export async function create(user, { title, description, tags, priority }) {
+  await enforceIdeaLimit(user.id, user.tier);
+
   return Idea.create({
-    userId,
+    userId: user.id,
     title,
     description: description || null,
     tags: tags || [],
@@ -351,5 +381,49 @@ export async function promoteToProject(user, ideaId) {
       progress: result.project.progress,
       createdAt: result.project.createdAt,
     },
+  };
+}
+
+/**
+ * Chat with AI about an idea (PRO feature)
+ * @param {Object} user - User object with id and tier
+ * @param {string} ideaId - Idea ID
+ * @param {string} message - User message
+ * @returns {Promise<{response: string}>}
+ */
+export async function chat(user, ideaId, message) {
+  // Require PRO tier for AI chat
+  if (user.tier !== 'pro') {
+    throw new AppError('Chat IA requiere suscripcion Pro', {
+      statusCode: 403,
+      code: 'pro_tier_required',
+      details: {
+        feature: 'idea_chat',
+        upgradeUrl: '/paywall',
+      },
+    });
+  }
+
+  const idea = await Idea.findOne({ where: { id: ideaId, userId: user.id } });
+
+  if (!idea) {
+    throw new AppError('Idea not found', { statusCode: 404, code: 'not_found' });
+  }
+
+  // TODO: Integrate with AI service for real responses
+  // For now, return a mock response based on the idea context
+  const mockResponses = [
+    `Sobre tu idea "${idea.title}": Es un excelente punto de partida. Te sugiero empezar por definir los objetivos principales y luego dividirlos en tareas mas pequenas.`,
+    `Analizando "${idea.title}": Considera validar esta idea con usuarios potenciales antes de invertir mucho tiempo. Puedes crear un MVP rapido para probar.`,
+    `Respecto a "${idea.title}": Una buena estrategia seria identificar los recursos que necesitas y estimar el tiempo requerido para cada fase del proyecto.`,
+    `Para "${idea.title}": Te recomiendo crear un cronograma con hitos claros. Esto te ayudara a mantener el enfoque y medir tu progreso.`,
+  ];
+
+  const randomResponse = mockResponses[Math.floor(Math.random() * mockResponses.length)];
+
+  return {
+    response: randomResponse,
+    ideaId: idea.id,
+    ideaTitle: idea.title,
   };
 }

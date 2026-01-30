@@ -2,6 +2,7 @@ import { apiClient } from './apiClient';
 import {
   CreateIdeaRequest,
   Idea,
+  IdeaChatResponse,
   IdeasListResponse,
   PromoteIdeaResponse,
   UpdateIdeaRequest,
@@ -59,7 +60,7 @@ export const ideasService = {
 
   async updateIdea(ideaId: string, data: UpdateIdeaRequest): Promise<Idea> {
     try {
-      const res = await apiClient.patch<Idea>(`/ideas/${ideaId}`, data);
+      const res = await apiClient.put<Idea>(`/ideas/${ideaId}`, data);
       return res.data;
     } catch (error) {
       throw new Error(getErrorMessage(error));
@@ -105,6 +106,15 @@ export const ideasService = {
     try {
       const res = await apiClient.post<IdeasListResponse>('/ideas/reorder', { orderedIds });
       return res.data.ideas;
+    } catch (error) {
+      throw new Error(getErrorMessage(error));
+    }
+  },
+
+  async chatWithIdea(ideaId: string, message: string): Promise<IdeaChatResponse> {
+    try {
+      const res = await apiClient.post<IdeaChatResponse>(`/ideas/${ideaId}/chat`, { message });
+      return res.data;
     } catch (error) {
       throw new Error(getErrorMessage(error));
     }

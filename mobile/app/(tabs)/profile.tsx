@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { ScrollView, StyleSheet, View, Pressable, Linking } from 'react-native';
+import { useState, useEffect, useCallback } from 'react';
+import { ScrollView, StyleSheet, View, Pressable, Linking, Modal, ActivityIndicator } from 'react-native';
 import { Text } from 'react-native-paper';
 import {
   User,
@@ -18,14 +18,29 @@ import {
   FileText,
   Lock,
   Trash2,
+  Award,
+  X,
+  Trophy,
+  Flame,
+  CheckCircle,
+  Target,
+  Sparkles,
 } from 'lucide-react-native';
 
 import { useRouter } from 'expo-router';
 
-import { COLORS, RADIUS, SPACING, BORDERS, SHADOWS, MINIMAL_CARD, BRUTAL_BUTTON_SECONDARY } from '../../constants/theme';
+import { COLORS, RADIUS, SPACING, BORDERS, SHADOWS, MINIMAL_CARD, BRUTAL_BUTTON_SECONDARY, BRUTAL_CARD } from '../../constants/theme';
 import Screen from '../components/Screen';
+import LevelBadge from '../components/LevelBadge';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { isMockApi } from '../../src/services/api';
+import { getMyStats, UserStats } from '../../src/services/statsService';
+import {
+  getMyAchievements,
+  getAllAchievements,
+  Achievement,
+  UserAchievement,
+} from '../../src/services/achievementsService';
 
 /**
  * Minimalist Profile Screen
@@ -37,8 +52,69 @@ export default function ProfileScreen() {
   const { user, logout } = useAuth();
   const router = useRouter();
   const [resetMessage, setResetMessage] = useState<string | null>(null);
+  const [userStats, setUserStats] = useState<UserStats | null>(null);
+  const [allAchievements, setAllAchievements] = useState<Achievement[]>([]);
+  const [unlockedAchievements, setUnlockedAchievements] = useState<UserAchievement[]>([]);
+  const [achievementsLoading, setAchievementsLoading] = useState(true);
+  const [selectedAchievement, setSelectedAchievement] = useState<{
+    achievement: Achievement;
+    unlocked: boolean;
+    unlockedAt?: string;
+  } | null>(null);
 
   const isPro = user?.tier === 'pro';
+
+  const loadAchievements = useCallback(async () => {
+    try {
+      setAchievementsLoading(true);
+      const [statsResponse, myAchievementsRes, allAchievementsRes] = await Promise.all([
+        getMyStats().catch(() => null),
+        getMyAchievements().catch(() => ({ achievements: [], totalXPFromAchievements: 0 })),
+        getAllAchievements().catch(() => ({ achievements: [] })),
+      ]);
+      setUserStats(statsResponse);
+      setUnlockedAchievements(myAchievementsRes.achievements);
+      setAllAchievements(allAchievementsRes.achievements);
+    } catch {
+      // Silently handle errors - achievements are non-critical
+    } finally {
+      setAchievementsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadAchievements();
+  }, [loadAchievements]);
+
+  const unlockedIds = new Set(unlockedAchievements.map((ua) => ua.achievementId));
+
+  const getAchievementIcon = (category: Achievement['category'], size: number, color: string) => {
+    switch (category) {
+      case 'streak':
+        return <Flame size={size} color={color} />;
+      case 'tasks':
+        return <CheckCircle size={size} color={color} />;
+      case 'projects':
+        return <Target size={size} color={color} />;
+      case 'checkins':
+        return <Trophy size={size} color={color} />;
+      case 'special':
+        return <Sparkles size={size} color={color} />;
+      default:
+        return <Award size={size} color={color} />;
+    }
+  };
+
+  const handleAchievementPress = (achievement: Achievement) => {
+    const userAchievement = unlockedAchievements.find(
+      (ua) => ua.achievementId === achievement.id
+    );
+    setSelectedAchievement({
+      achievement,
+      unlocked: unlockedIds.has(achievement.id),
+      unlockedAt: userAchievement?.unlockedAt,
+    });
+  };
 
   const handleUpgrade = () => {
     router.push('/paywall');
@@ -148,6 +224,151 @@ export default function ProfileScreen() {
             </Text>
           </View>
         )}
+
+        {/* Level and Stats */}
+        <View style={styles.levelSection}>
+          <LevelBadge totalXP={userStats?.totalXP ?? 0} showProgress />
+        </View>
+
+        {/* Achievements Section */}
+        <View style={styles.achievementsSection}>
+          <View style={styles.achievementsSectionHeader}>
+            <Award size={20} color={COLORS.primary} />
+            <Text style={styles.achievementsSectionTitle}>Mis Logros</Text>
+            <Text style={styles.achievementsCount}>
+              {unlockedAchievements.length}/{allAchievements.length}
+            </Text>
+          </View>
+
+          {achievementsLoading ? (
+            <View style={styles.achievementsLoading}>
+              <ActivityIndicator size="small" color={COLORS.primary} />
+              <Text style={styles.achievementsLoadingText}>Cargando logros...</Text>
+            </View>
+          ) : allAchievements.length === 0 ? (
+            <View style={styles.achievementsEmpty}>
+              <Award size={32} color={COLORS.textLight} />
+              <Text style={styles.achievementsEmptyText}>
+                Los logros estaran disponibles pronto
+              </Text>
+            </View>
+          ) : (
+            <View style={styles.achievementsGrid}>
+              {allAchievements.map((achievement) => {
+                const isUnlocked = unlockedIds.has(achievement.id);
+                return (
+                  <Pressable
+                    key={achievement.id}
+                    onPress={() => handleAchievementPress(achievement)}
+                    style={({ pressed }) => [
+                      styles.achievementBadge,
+                      isUnlocked && styles.achievementBadgeUnlocked,
+                      pressed && styles.achievementBadgePressed,
+                    ]}
+                  >
+                    <View
+                      style={[
+                        styles.achievementIconWrapper,
+                        isUnlocked && styles.achievementIconWrapperUnlocked,
+                      ]}
+                    >
+                      {getAchievementIcon(
+                        achievement.category,
+                        24,
+                        isUnlocked ? COLORS.surface : COLORS.textLight
+                      )}
+                    </View>
+                    <Text
+                      style={[
+                        styles.achievementName,
+                        isUnlocked && styles.achievementNameUnlocked,
+                      ]}
+                      numberOfLines={2}
+                    >
+                      {achievement.name}
+                    </Text>
+                    {!isUnlocked && (
+                      <View style={styles.lockedOverlay}>
+                        <Lock size={14} color={COLORS.textLight} />
+                      </View>
+                    )}
+                  </Pressable>
+                );
+              })}
+            </View>
+          )}
+        </View>
+
+        {/* Achievement Detail Modal */}
+        <Modal
+          visible={selectedAchievement !== null}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setSelectedAchievement(null)}
+        >
+          <Pressable
+            style={styles.modalOverlay}
+            onPress={() => setSelectedAchievement(null)}
+          >
+            <Pressable style={styles.modalContent} onPress={(e) => e.stopPropagation()}>
+              {selectedAchievement && (
+                <>
+                  <Pressable
+                    style={styles.modalClose}
+                    onPress={() => setSelectedAchievement(null)}
+                  >
+                    <X size={20} color={COLORS.textMuted} />
+                  </Pressable>
+
+                  <View
+                    style={[
+                      styles.modalIconWrapper,
+                      selectedAchievement.unlocked && styles.modalIconWrapperUnlocked,
+                    ]}
+                  >
+                    {getAchievementIcon(
+                      selectedAchievement.achievement.category,
+                      40,
+                      selectedAchievement.unlocked ? COLORS.surface : COLORS.textLight
+                    )}
+                  </View>
+
+                  <Text style={styles.modalTitle}>
+                    {selectedAchievement.achievement.name}
+                  </Text>
+
+                  <Text style={styles.modalDescription}>
+                    {selectedAchievement.achievement.description}
+                  </Text>
+
+                  <View style={styles.modalXPBadge}>
+                    <Star size={16} color={COLORS.secondary} fill={COLORS.secondary} />
+                    <Text style={styles.modalXPText}>
+                      +{selectedAchievement.achievement.xpReward} XP
+                    </Text>
+                  </View>
+
+                  {selectedAchievement.unlocked ? (
+                    <View style={styles.modalUnlockedBadge}>
+                      <CheckCircle size={16} color={COLORS.secondary} />
+                      <Text style={styles.modalUnlockedText}>
+                        Desbloqueado{' '}
+                        {selectedAchievement.unlockedAt
+                          ? new Date(selectedAchievement.unlockedAt).toLocaleDateString('es-ES')
+                          : ''}
+                      </Text>
+                    </View>
+                  ) : (
+                    <View style={styles.modalLockedBadge}>
+                      <Lock size={16} color={COLORS.textMuted} />
+                      <Text style={styles.modalLockedText}>Aun no desbloqueado</Text>
+                    </View>
+                  )}
+                </>
+              )}
+            </Pressable>
+          </Pressable>
+        </Modal>
 
         {/* Account Section */}
         <View style={styles.section}>
@@ -654,5 +875,200 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     textAlign: 'center',
     marginTop: SPACING(1),
+  },
+
+  // Level Section
+  levelSection: {
+    alignItems: 'flex-start',
+  },
+
+  // Achievements Section
+  achievementsSection: {
+    ...MINIMAL_CARD,
+    padding: SPACING(2.5),
+    gap: SPACING(2),
+  },
+  achievementsSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING(1),
+  },
+  achievementsSectionTitle: {
+    flex: 1,
+    fontSize: 17,
+    fontWeight: '700',
+    color: COLORS.text,
+  },
+  achievementsCount: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.textMuted,
+    backgroundColor: COLORS.backgroundAlt,
+    paddingVertical: SPACING(0.5),
+    paddingHorizontal: SPACING(1),
+    borderRadius: RADIUS.full,
+  },
+  achievementsLoading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING(1),
+    padding: SPACING(3),
+  },
+  achievementsLoadingText: {
+    fontSize: 14,
+    color: COLORS.textMuted,
+    fontWeight: '500',
+  },
+  achievementsEmpty: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING(1),
+    padding: SPACING(3),
+  },
+  achievementsEmptyText: {
+    fontSize: 14,
+    color: COLORS.textMuted,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  achievementsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: SPACING(1.5),
+  },
+  achievementBadge: {
+    width: '30%',
+    aspectRatio: 1,
+    backgroundColor: COLORS.backgroundAlt,
+    borderRadius: RADIUS.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: SPACING(1),
+    gap: SPACING(0.5),
+    position: 'relative',
+  },
+  achievementBadgeUnlocked: {
+    backgroundColor: `${COLORS.secondary}15`,
+    borderWidth: 1.5,
+    borderColor: COLORS.secondary,
+  },
+  achievementBadgePressed: {
+    opacity: 0.8,
+    transform: [{ scale: 0.97 }],
+  },
+  achievementIconWrapper: {
+    width: 44,
+    height: 44,
+    borderRadius: RADIUS.full,
+    backgroundColor: COLORS.borderLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  achievementIconWrapperUnlocked: {
+    backgroundColor: COLORS.secondary,
+  },
+  achievementName: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: COLORS.textMuted,
+    textAlign: 'center',
+    lineHeight: 12,
+  },
+  achievementNameUnlocked: {
+    color: COLORS.text,
+    fontWeight: '700',
+  },
+  lockedOverlay: {
+    position: 'absolute',
+    top: SPACING(0.75),
+    right: SPACING(0.75),
+  },
+
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: SPACING(3),
+  },
+  modalContent: {
+    ...BRUTAL_CARD,
+    width: '100%',
+    maxWidth: 320,
+    padding: SPACING(3),
+    alignItems: 'center',
+    gap: SPACING(2),
+  },
+  modalClose: {
+    position: 'absolute',
+    top: SPACING(1.5),
+    right: SPACING(1.5),
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalIconWrapper: {
+    width: 80,
+    height: 80,
+    borderRadius: RADIUS.full,
+    backgroundColor: COLORS.backgroundAlt,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: SPACING(1),
+  },
+  modalIconWrapperUnlocked: {
+    backgroundColor: COLORS.secondary,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: COLORS.text,
+    textAlign: 'center',
+  },
+  modalDescription: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: COLORS.textMuted,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  modalXPBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING(0.5),
+    backgroundColor: `${COLORS.secondary}20`,
+    paddingVertical: SPACING(0.75),
+    paddingHorizontal: SPACING(1.5),
+    borderRadius: RADIUS.full,
+  },
+  modalXPText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: COLORS.secondary,
+  },
+  modalUnlockedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING(0.75),
+    paddingTop: SPACING(1),
+  },
+  modalUnlockedText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.secondary,
+  },
+  modalLockedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING(0.75),
+    paddingTop: SPACING(1),
+  },
+  modalLockedText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.textMuted,
   },
 });

@@ -14,20 +14,23 @@ const { width } = Dimensions.get('window');
 // Features comparison data
 const FREE_FEATURES = [
   '1 proyecto activo',
-  '2 check-ins por semana',
-  '1 iteracion de plan con IA',
+  '5 ideas en backlog',
+  '2 iteraciones IA/proyecto',
   'Ver tareas (sin editar)',
+  'Badges basicos',
   'Notificaciones basicas',
 ];
 
 const PRO_FEATURES = [
   'Proyectos ilimitados',
-  'Check-ins ilimitados',
-  'Iteraciones de plan ilimitadas',
+  'Ideas ilimitadas',
+  'Iteraciones IA ilimitadas',
   'Editar tareas y fases',
-  'Revisiones semanales detalladas',
+  'Chat IA por idea',
+  'Todos los badges',
+  'Revisiones semanales',
   'Analytics de progreso',
-  'Configuracion personalizada',
+  'Challenges y retos',
   'Soporte prioritario',
 ];
 

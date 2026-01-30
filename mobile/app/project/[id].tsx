@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FlatList, ScrollView, StyleSheet, View } from 'react-native';
 import {
   Button,
@@ -6,6 +6,7 @@ import {
   Chip,
   Dialog,
   Divider,
+  FAB,
   HelperText,
   IconButton,
   Portal,
@@ -23,7 +24,7 @@ import SectionHeading from '../components/SectionHeading';
 import TaskListItem from '../components/TaskListItem';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { api } from '../../src/services/api';
-import { PlanIteration, ProjectDetail, Task } from '../../src/types/models';
+import { CreateTaskRequest, PlanIteration, ProjectDetail, Task, TaskUpdateRequest } from '../../src/types/models';
 
 function formatDate(value?: string | null) {
   if (!value) return '';
@@ -53,6 +54,18 @@ export default function ProjectDetailScreen() {
   const [newPhaseName, setNewPhaseName] = useState('');
   const [newPhaseDescription, setNewPhaseDescription] = useState('');
   const [phaseError, setPhaseError] = useState<string | null>(null);
+
+  // Task management state
+  const [taskModalVisible, setTaskModalVisible] = useState(false);
+  const [taskModalMode, setTaskModalMode] = useState<'create' | 'edit'>('create');
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [taskTitle, setTaskTitle] = useState('');
+  const [taskDescription, setTaskDescription] = useState('');
+  const [taskDueDate, setTaskDueDate] = useState('');
+  const [taskSubmitting, setTaskSubmitting] = useState(false);
+  const [taskError, setTaskError] = useState<string | null>(null);
+  const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
+  const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
 
   const loadProject = async () => {
     if (!id) return;
@@ -123,6 +136,11 @@ export default function ProjectDetailScreen() {
     <TaskListItem
       task={item}
       onPress={() => router.push(`/task/${item.id}`)}
+      onToggleComplete={handleToggleTaskComplete}
+      onEdit={openEditTaskModal}
+      onDelete={confirmDeleteTask}
+      showActions={true}
+      canEdit={isPro}
     />
   );
 
@@ -237,6 +255,139 @@ export default function ProjectDetailScreen() {
     }
   };
 
+  // Task management handlers
+  const resetTaskForm = useCallback(() => {
+    setTaskTitle('');
+    setTaskDescription('');
+    setTaskDueDate('');
+    setEditingTask(null);
+    setTaskError(null);
+  }, []);
+
+  const openCreateTaskModal = useCallback(() => {
+    resetTaskForm();
+    setTaskModalMode('create');
+    setTaskModalVisible(true);
+  }, [resetTaskForm]);
+
+  const openEditTaskModal = useCallback((task: Task) => {
+    if (!isPro) return; // Only PRO users can edit
+    setEditingTask(task);
+    setTaskTitle(task.title);
+    setTaskDescription(task.description ?? '');
+    setTaskDueDate(task.dueDate ?? '');
+    setTaskModalMode('edit');
+    setTaskModalVisible(true);
+  }, [isPro]);
+
+  const closeTaskModal = useCallback(() => {
+    setTaskModalVisible(false);
+    resetTaskForm();
+  }, [resetTaskForm]);
+
+  const validateDateFormat = (dateStr: string): boolean => {
+    if (!dateStr.trim()) return true; // Empty is valid (optional)
+    const regex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!regex.test(dateStr)) return false;
+    const date = new Date(dateStr);
+    return !Number.isNaN(date.getTime());
+  };
+
+  const handleAddTask = async () => {
+    if (!project) return;
+    if (!taskTitle.trim()) {
+      setTaskError('El titulo es obligatorio');
+      return;
+    }
+    if (taskDueDate.trim() && !validateDateFormat(taskDueDate)) {
+      setTaskError('Formato de fecha invalido. Usa YYYY-MM-DD');
+      return;
+    }
+
+    try {
+      setTaskSubmitting(true);
+      setTaskError(null);
+      const payload: CreateTaskRequest = {
+        title: taskTitle.trim(),
+        description: taskDescription.trim() || null,
+        dueDate: taskDueDate.trim() || null,
+      };
+      await api.tasks.create(project.id, payload);
+      await loadProject();
+      closeTaskModal();
+    } catch (e) {
+      setTaskError(e instanceof Error ? e.message : 'No se pudo crear la tarea');
+    } finally {
+      setTaskSubmitting(false);
+    }
+  };
+
+  const handleEditTask = async () => {
+    if (!editingTask) return;
+    if (!taskTitle.trim()) {
+      setTaskError('El titulo es obligatorio');
+      return;
+    }
+    if (taskDueDate.trim() && !validateDateFormat(taskDueDate)) {
+      setTaskError('Formato de fecha invalido. Usa YYYY-MM-DD');
+      return;
+    }
+
+    try {
+      setTaskSubmitting(true);
+      setTaskError(null);
+      const payload: TaskUpdateRequest = {
+        title: taskTitle.trim(),
+        description: taskDescription.trim() || null,
+        dueDate: taskDueDate.trim() || null,
+      };
+      await api.tasks.update(editingTask.id, payload);
+      await loadProject();
+      closeTaskModal();
+    } catch (e) {
+      setTaskError(e instanceof Error ? e.message : 'No se pudo actualizar la tarea');
+    } finally {
+      setTaskSubmitting(false);
+    }
+  };
+
+  const handleToggleTaskComplete = async (task: Task) => {
+    try {
+      if (task.status === 'completed') {
+        // Revert to pending
+        await api.tasks.update(task.id, { status: 'pending' });
+      } else {
+        // Mark as complete
+        await api.tasks.complete(task.id, {});
+      }
+      await loadProject();
+    } catch (e) {
+      // Show error if needed
+      setError(e instanceof Error ? e.message : 'No se pudo actualizar la tarea');
+    }
+  };
+
+  const confirmDeleteTask = useCallback((task: Task) => {
+    if (!isPro) return; // Only PRO users can delete
+    setTaskToDelete(task);
+    setDeleteConfirmVisible(true);
+  }, [isPro]);
+
+  const handleDeleteTask = async () => {
+    if (!taskToDelete) return;
+
+    try {
+      await api.tasks.delete(taskToDelete.id);
+      await loadProject();
+      setDeleteConfirmVisible(false);
+      setTaskToDelete(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'No se pudo eliminar la tarea');
+      setDeleteConfirmVisible(false);
+      setTaskToDelete(null);
+    }
+  };
+
   const renderIterationCard = (iteration: PlanIteration) => (
     <View key={iteration.id} style={styles.iterationCard}>
       <View style={styles.iterationHeader}>
@@ -330,7 +481,7 @@ export default function ProjectDetailScreen() {
 
         {project ? (
           <>
-            <Card style={[styles.heroCard, { backgroundColor: areaConfig.surface, borderColor: areaConfig.accent }]}>
+            <Card style={[styles.heroCard, { backgroundColor: areaConfig.background, borderColor: areaConfig.accent }]}>
               <Card.Content>
                 <View style={styles.areaHeader}>
                   <AreaIcon color={areaConfig.accent} size={32} />
@@ -524,6 +675,96 @@ export default function ProjectDetailScreen() {
           </Dialog.Actions>
         </Dialog>
       </Portal>
+
+      {/* Task Modal */}
+      <Portal>
+        <Dialog visible={taskModalVisible} onDismiss={closeTaskModal} style={styles.taskDialog}>
+          <Dialog.Title>
+            {taskModalMode === 'create' ? 'Nueva Tarea' : 'Editar Tarea'}
+          </Dialog.Title>
+          <Dialog.Content style={styles.taskDialogContent}>
+            <TextInput
+              label="Titulo *"
+              value={taskTitle}
+              onChangeText={setTaskTitle}
+              mode="outlined"
+              style={styles.input}
+              disabled={taskSubmitting}
+            />
+            <TextInput
+              label="Descripcion"
+              value={taskDescription}
+              onChangeText={setTaskDescription}
+              mode="outlined"
+              multiline
+              numberOfLines={3}
+              style={[styles.input, styles.taskDescriptionInput]}
+              disabled={taskSubmitting}
+            />
+            <TextInput
+              label="Fecha limite (YYYY-MM-DD)"
+              value={taskDueDate}
+              onChangeText={setTaskDueDate}
+              mode="outlined"
+              style={styles.input}
+              disabled={taskSubmitting}
+              placeholder="2025-12-31"
+              left={<TextInput.Icon icon="calendar" />}
+            />
+            <HelperText type="info">
+              Deja vacio si no hay fecha limite
+            </HelperText>
+            {taskError ? <HelperText type="error">{taskError}</HelperText> : null}
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={closeTaskModal} disabled={taskSubmitting}>
+              Cancelar
+            </Button>
+            <Button
+              mode="contained"
+              onPress={taskModalMode === 'create' ? handleAddTask : handleEditTask}
+              loading={taskSubmitting}
+              disabled={taskSubmitting || !taskTitle.trim()}
+            >
+              {taskModalMode === 'create' ? 'Crear' : 'Guardar'}
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
+
+      {/* Delete Confirmation Dialog */}
+      <Portal>
+        <Dialog visible={deleteConfirmVisible} onDismiss={() => setDeleteConfirmVisible(false)}>
+          <Dialog.Title>Eliminar Tarea</Dialog.Title>
+          <Dialog.Content>
+            <Text>
+              ¿Estas seguro de que quieres eliminar la tarea "{taskToDelete?.title}"? Esta accion no se puede deshacer.
+            </Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setDeleteConfirmVisible(false)}>Cancelar</Button>
+            <Button mode="contained" onPress={handleDeleteTask} buttonColor={COLORS.danger}>
+              Eliminar
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
+
+      {/* FAB for adding new task */}
+      {project && isPro ? (
+        <FAB
+          icon="plus"
+          style={styles.fab}
+          onPress={openCreateTaskModal}
+          label="Nueva tarea"
+        />
+      ) : project ? (
+        <FAB
+          icon="plus"
+          style={styles.fab}
+          onPress={openCreateTaskModal}
+        />
+      ) : null}
     </Screen>
   );
 }
@@ -649,5 +890,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+  },
+  fab: {
+    position: 'absolute',
+    margin: SPACING(2),
+    right: 0,
+    bottom: 0,
+    backgroundColor: COLORS.primary,
+  },
+  taskDialog: {
+    borderRadius: RADIUS.md,
+    backgroundColor: COLORS.surface,
+  },
+  taskDialogContent: {
+    backgroundColor: COLORS.surface,
+    gap: SPACING(1),
+  },
+  taskDescriptionInput: {
+    minHeight: SPACING(10),
+    textAlignVertical: 'top' as const,
   },
 });

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -17,8 +18,11 @@ import {
   Archive,
   Rocket,
   Trash2,
-  MessageSquare,
+  Send,
   Sparkles,
+  Star,
+  Crown,
+  Lock,
 } from 'lucide-react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
@@ -33,6 +37,7 @@ import {
 import Screen from '../components/Screen';
 import { ideasService } from '../../src/services/ideasService';
 import { Idea } from '../../src/types/models';
+import { useProFeature } from '../../src/hooks/useProFeature';
 
 function formatDate(dateString?: string) {
   if (!dateString) return '';
@@ -55,6 +60,7 @@ function formatDate(dateString?: string) {
 export default function IdeaDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { isPro, requirePro } = useProFeature();
 
   const [idea, setIdea] = useState<Idea | null>(null);
   const [loading, setLoading] = useState(true);
@@ -73,6 +79,14 @@ export default function IdeaDetailScreen() {
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
+  // AI Chat state
+  const [chatMessage, setChatMessage] = useState('');
+  const [chatResponse, setChatResponse] = useState<string | null>(null);
+  const [chatLoading, setChatLoading] = useState(false);
+
+  // Priority state for editing
+  const [editPriority, setEditPriority] = useState(0);
+
   const load = useCallback(async () => {
     if (!id) return;
     try {
@@ -83,6 +97,7 @@ export default function IdeaDetailScreen() {
       setTitle(data.title);
       setDescription(data.description ?? '');
       setTagsInput(data.tags.join(', '));
+      setEditPriority(data.priority);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'No se pudo cargar la idea');
     } finally {
@@ -113,6 +128,7 @@ export default function IdeaDetailScreen() {
         title: title.trim(),
         description: description.trim() || null,
         tags,
+        priority: editPriority,
       });
 
       setIdea(updated);
@@ -162,6 +178,47 @@ export default function IdeaDetailScreen() {
 
   const handleBack = () => {
     router.back();
+  };
+
+  const handleSendChat = async () => {
+    if (!idea || !chatMessage.trim()) return;
+
+    try {
+      setChatLoading(true);
+      setError(null);
+      const result = await ideasService.chatWithIdea(idea.id, chatMessage.trim());
+      setChatResponse(result.response);
+      setChatMessage('');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'No se pudo enviar el mensaje');
+    } finally {
+      setChatLoading(false);
+    }
+  };
+
+  const handlePriorityChange = (newPriority: number) => {
+    setEditPriority(newPriority);
+  };
+
+  const renderPriorityStars = (priority: number, editable = false) => {
+    return (
+      <View style={styles.priorityStarsContainer}>
+        {[1, 2, 3, 4, 5].map((starValue) => (
+          <Pressable
+            key={starValue}
+            onPress={editable ? () => handlePriorityChange(starValue === editPriority ? 0 : starValue) : undefined}
+            disabled={!editable}
+            style={styles.starButton}
+          >
+            <Star
+              size={editable ? 24 : 16}
+              color={COLORS.warning}
+              fill={starValue <= (editable ? editPriority : priority) ? COLORS.warning : 'transparent'}
+            />
+          </Pressable>
+        ))}
+      </View>
+    );
   };
 
   if (loading) {
@@ -300,6 +357,17 @@ export default function IdeaDetailScreen() {
                   />
                 </View>
 
+                <View style={styles.inputGroup}>
+                  <View style={styles.labelRow}>
+                    <Star size={14} color={COLORS.textMuted} />
+                    <Text style={styles.inputLabel}>Prioridad</Text>
+                  </View>
+                  {renderPriorityStars(editPriority, true)}
+                  <Text style={styles.priorityHint}>
+                    {editPriority === 0 ? 'Sin prioridad' : `Prioridad: ${editPriority}/5`}
+                  </Text>
+                </View>
+
                 <Pressable
                   style={({ pressed }) => [
                     styles.cancelEditButton,
@@ -309,6 +377,7 @@ export default function IdeaDetailScreen() {
                     setTitle(idea.title);
                     setDescription(idea.description ?? '');
                     setTagsInput(idea.tags.join(', '));
+                    setEditPriority(idea.priority);
                     setIsEditing(false);
                   }}
                 >
@@ -318,7 +387,10 @@ export default function IdeaDetailScreen() {
             ) : (
               // View Mode
               <>
-                <Text style={styles.ideaTitle}>{idea.title}</Text>
+                <View style={styles.titleWithPriority}>
+                  <Text style={styles.ideaTitle}>{idea.title}</Text>
+                  {idea.priority > 0 && renderPriorityStars(idea.priority, false)}
+                </View>
                 <Text style={styles.ideaDate}>
                   Creada el {formatDate(idea.createdAt)}
                 </Text>
@@ -339,20 +411,85 @@ export default function IdeaDetailScreen() {
                   </View>
                 )}
 
-                {/* AI Chat Placeholder */}
+                {/* AI Chat Section */}
                 <View style={styles.aiSection}>
                   <View style={styles.aiHeader}>
                     <View style={styles.aiIconWrapper}>
                       <Sparkles size={18} color={COLORS.tertiary} />
                     </View>
-                    <Text style={styles.aiTitle}>Chat con IA</Text>
+                    <Text style={styles.aiTitle}>Consultar IA</Text>
+                    {!isPro && (
+                      <View style={styles.proBadge}>
+                        <Crown size={12} color={COLORS.secondary} />
+                        <Text style={styles.proBadgeText}>PRO</Text>
+                      </View>
+                    )}
                   </View>
-                  <View style={styles.aiPlaceholder}>
-                    <MessageSquare size={24} color={COLORS.textLight} />
-                    <Text style={styles.aiPlaceholderText}>
-                      Proximamente podras explorar esta idea con ayuda de IA
-                    </Text>
-                  </View>
+
+                  {!isPro ? (
+                    // PRO-only lock message
+                    <Pressable
+                      style={({ pressed }) => [
+                        styles.proLockedCard,
+                        pressed && styles.proLockedCardPressed,
+                      ]}
+                      onPress={() => requirePro('idea_chat')}
+                    >
+                      <Lock size={24} color={COLORS.secondary} />
+                      <Text style={styles.proLockedTitle}>Funcion Pro</Text>
+                      <Text style={styles.proLockedDescription}>
+                        Chatea con IA sobre tus ideas para obtener feedback, sugerencias y validacion.
+                      </Text>
+                      <View style={styles.proUpgradeButton}>
+                        <Text style={styles.proUpgradeButtonText}>Ver planes</Text>
+                      </View>
+                    </Pressable>
+                  ) : (
+                    <>
+                      {/* Chat Response */}
+                      {chatResponse && (
+                        <View style={styles.chatResponseCard}>
+                          <View style={styles.chatResponseHeader}>
+                            <Sparkles size={14} color={COLORS.tertiary} />
+                            <Text style={styles.chatResponseLabel}>Respuesta de IA</Text>
+                          </View>
+                          <Text style={styles.chatResponseText}>{chatResponse}</Text>
+                        </View>
+                      )}
+
+                      {/* Chat Input */}
+                      <View style={styles.chatInputContainer}>
+                        <RNTextInput
+                          style={styles.chatInput}
+                          value={chatMessage}
+                          onChangeText={setChatMessage}
+                          placeholder="Pregunta algo sobre esta idea..."
+                          placeholderTextColor={COLORS.textLight}
+                          multiline
+                          maxLength={500}
+                          editable={!chatLoading}
+                        />
+                        <Pressable
+                          style={({ pressed }) => [
+                            styles.sendButton,
+                            pressed && styles.sendButtonPressed,
+                            (chatLoading || !chatMessage.trim()) && styles.sendButtonDisabled,
+                          ]}
+                          onPress={handleSendChat}
+                          disabled={chatLoading || !chatMessage.trim()}
+                        >
+                          {chatLoading ? (
+                            <ActivityIndicator size="small" color="#FFFFFF" />
+                          ) : (
+                            <Send size={18} color="#FFFFFF" />
+                          )}
+                        </Pressable>
+                      </View>
+                      <Text style={styles.chatHint}>
+                        Pregunta sobre viabilidad, pasos siguientes, recursos necesarios, etc.
+                      </Text>
+                    </>
+                  )}
                 </View>
 
                 {/* Actions */}
@@ -615,11 +752,27 @@ const styles = StyleSheet.create({
   content: {
     gap: SPACING(2),
   },
+  titleWithPriority: {
+    gap: SPACING(1),
+  },
   ideaTitle: {
     fontSize: 24,
     fontWeight: '700',
     color: COLORS.text,
     lineHeight: 32,
+  },
+  priorityStarsContainer: {
+    flexDirection: 'row',
+    gap: SPACING(0.5),
+    alignItems: 'center',
+  },
+  starButton: {
+    padding: SPACING(0.25),
+  },
+  priorityHint: {
+    fontSize: 12,
+    color: COLORS.textMuted,
+    marginTop: SPACING(0.5),
   },
   ideaDate: {
     fontSize: 13,
@@ -676,19 +829,64 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: COLORS.text,
   },
-  aiPlaceholder: {
+  chatResponseCard: {
     ...MINIMAL_CARD,
-    padding: SPACING(4),
-    alignItems: 'center',
-    gap: SPACING(1.5),
-    borderStyle: 'dashed',
+    padding: SPACING(2),
+    gap: SPACING(1),
+    backgroundColor: `${COLORS.tertiary}08`,
+    borderColor: `${COLORS.tertiary}20`,
     borderWidth: 1,
-    borderColor: COLORS.border,
   },
-  aiPlaceholderText: {
+  chatResponseHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING(0.75),
+  },
+  chatResponseLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: COLORS.tertiary,
+  },
+  chatResponseText: {
     fontSize: 14,
-    color: COLORS.textMuted,
-    textAlign: 'center',
+    color: COLORS.text,
+    lineHeight: 21,
+  },
+  chatInputContainer: {
+    flexDirection: 'row',
+    gap: SPACING(1),
+    alignItems: 'flex-end',
+  },
+  chatInput: {
+    ...MINIMAL_INPUT,
+    flex: 1,
+    paddingVertical: SPACING(1.5),
+    paddingHorizontal: SPACING(2),
+    fontSize: 14,
+    color: COLORS.text,
+    minHeight: 44,
+    maxHeight: 100,
+  },
+  sendButton: {
+    width: 44,
+    height: 44,
+    borderRadius: RADIUS.md,
+    backgroundColor: COLORS.tertiary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...SHADOWS.sm,
+  },
+  sendButtonPressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.98 }],
+  },
+  sendButtonDisabled: {
+    opacity: 0.5,
+  },
+  chatHint: {
+    fontSize: 12,
+    color: COLORS.textLight,
+    fontStyle: 'italic',
   },
 
   // Actions
@@ -865,5 +1063,59 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: {
     opacity: 0.7,
+  },
+
+  // PRO Badge
+  proBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING(0.5),
+    backgroundColor: `${COLORS.secondary}15`,
+    paddingVertical: SPACING(0.5),
+    paddingHorizontal: SPACING(1),
+    borderRadius: RADIUS.full,
+  },
+  proBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: COLORS.secondary,
+    letterSpacing: 0.5,
+  },
+
+  // PRO Locked Card
+  proLockedCard: {
+    ...MINIMAL_CARD,
+    padding: SPACING(3),
+    alignItems: 'center',
+    gap: SPACING(1.5),
+    borderColor: `${COLORS.secondary}30`,
+    borderWidth: 1,
+    backgroundColor: `${COLORS.secondary}05`,
+  },
+  proLockedCardPressed: {
+    opacity: 0.9,
+  },
+  proLockedTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: COLORS.text,
+  },
+  proLockedDescription: {
+    fontSize: 14,
+    color: COLORS.textMuted,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  proUpgradeButton: {
+    backgroundColor: COLORS.secondary,
+    paddingVertical: SPACING(1),
+    paddingHorizontal: SPACING(3),
+    borderRadius: RADIUS.md,
+    marginTop: SPACING(1),
+  },
+  proUpgradeButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
 });

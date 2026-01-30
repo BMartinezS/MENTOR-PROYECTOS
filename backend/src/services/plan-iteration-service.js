@@ -40,10 +40,14 @@ export async function create(user, projectId, { feedback, focusArea }) {
 
   if (user.tier === 'free') {
     const existing = await PlanIteration.count({ where: { projectId } });
-    if (existing >= 1) {
-      throw new AppError('Free plan solo permite 1 iteración adicional', {
+    if (existing >= 2) {
+      throw new AppError('Free plan permite hasta 2 iteraciones por proyecto', {
         statusCode: 403,
         code: 'free_iteration_limit',
+        details: {
+          currentCount: existing,
+          limit: 2,
+        },
       });
     }
   }

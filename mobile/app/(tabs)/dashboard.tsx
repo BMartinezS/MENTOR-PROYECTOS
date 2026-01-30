@@ -10,6 +10,7 @@ import AppHeader from '../components/AppHeader';
 import CheckinCard from '../components/CheckinCard';
 import EmptyState from '../components/EmptyState';
 import HighlightCard from '../components/HighlightCard';
+import LevelBadge from '../components/LevelBadge';
 import ProjectCard from '../components/ProjectCard';
 import Screen from '../components/Screen';
 import SectionHeading from '../components/SectionHeading';
@@ -137,8 +138,9 @@ export default function DashboardScreen() {
       >
         <AppHeader onPrimaryAction={() => router.push('/project/new')} />
 
-        {/* User Stats Row - Streak and XP */}
+        {/* User Stats Row - Level, Streak and XP */}
         <View style={styles.userStatsRow}>
+          <LevelBadge totalXP={userStats?.totalXP ?? 0} />
           <StreakBadge
             currentStreak={userStats?.currentStreak ?? 0}
             longestStreak={userStats?.longestStreak ?? 0}

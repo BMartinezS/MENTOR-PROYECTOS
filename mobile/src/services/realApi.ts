@@ -7,6 +7,8 @@ import {
   CreateProjectAiRequest,
   CreateProjectAiResponse,
   CreateProjectRequest,
+  CreateTaskRequest,
+  DeleteTaskResponse,
   IteratePlanRequest,
   IteratePlanResponse,
   PlanIterationsResponse,
@@ -151,6 +153,15 @@ export const realApi = {
   },
 
   tasks: {
+    async create(projectId: string, payload: CreateTaskRequest): Promise<Task> {
+      try {
+        const res = await apiClient.post<Task>(`/projects/${projectId}/tasks`, payload);
+        return res.data;
+      } catch (error) {
+        throw new Error(getErrorMessage(error));
+      }
+    },
+
     async complete(taskId: string, payload: TaskCompleteRequest): Promise<TaskCompleteResponse> {
       try {
         const res = await apiClient.patch<TaskCompleteResponse>(`/tasks/${taskId}/complete`, payload);
@@ -172,6 +183,15 @@ export const realApi = {
     async update(taskId: string, payload: TaskUpdateRequest): Promise<Task> {
       try {
         const res = await apiClient.patch<Task>(`/tasks/${taskId}`, payload);
+        return res.data;
+      } catch (error) {
+        throw new Error(getErrorMessage(error));
+      }
+    },
+
+    async delete(taskId: string): Promise<DeleteTaskResponse> {
+      try {
+        const res = await apiClient.delete<DeleteTaskResponse>(`/tasks/${taskId}`);
         return res.data;
       } catch (error) {
         throw new Error(getErrorMessage(error));

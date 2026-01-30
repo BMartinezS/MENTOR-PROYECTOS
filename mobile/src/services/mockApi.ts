@@ -6,6 +6,8 @@ import {
   CreateProjectAiRequest,
   CreateProjectAiResponse,
   CreateProjectRequest,
+  CreateTaskRequest,
+  DeleteTaskResponse,
   IteratePlanRequest,
   IteratePlanResponse,
   PlanIteration,
@@ -424,12 +426,72 @@ export const mockApi = {
   },
 
   tasks: {
+    async create(projectId: string, payload: CreateTaskRequest): Promise<Task> {
+      await delay(300);
+      const store = requireAuth();
+      const project = getProjectOrThrow(store, projectId);
+
+      if (!payload.title?.trim()) throw new Error('Titulo requerido');
+
+      const { nextId } = mockIds();
+      const newTask: Task = {
+        id: nextId('task'),
+        projectId,
+        phaseId: payload.phaseId ?? null,
+        title: payload.title.trim(),
+        description: payload.description ?? null,
+        status: 'pending',
+        priority: payload.priority ?? 'medium',
+        dueDate: payload.dueDate ?? null,
+      };
+
+      store.tasksById[newTask.id] = newTask;
+      project.tasks = [newTask, ...(project.tasks ?? [])];
+
+      // Add to phase if specified
+      if (payload.phaseId) {
+        const phase = project.phases?.find((p) => p.id === payload.phaseId);
+        if (phase) {
+          phase.tasks = [newTask, ...(phase.tasks ?? [])];
+        }
+      }
+
+      return newTask;
+    },
+
     async getById(taskId: string): Promise<Task> {
       await delay();
       const store = requireAuth();
       const task = store.tasksById[taskId];
       if (!task) throw new Error('Task not found');
       return task;
+    },
+
+    async delete(taskId: string): Promise<DeleteTaskResponse> {
+      await delay(250);
+      const store = requireAuth();
+      const task = store.tasksById[taskId];
+      if (!task) throw new Error('Task not found');
+
+      // Remove from tasksById
+      delete store.tasksById[taskId];
+
+      // Remove from project tasks
+      for (const project of store.projects) {
+        if (project.id === task.projectId) {
+          project.tasks = (project.tasks ?? []).filter((t) => t.id !== taskId);
+
+          // Remove from phases
+          if (project.phases) {
+            for (const phase of project.phases) {
+              phase.tasks = (phase.tasks ?? []).filter((t) => t.id !== taskId);
+            }
+          }
+          break;
+        }
+      }
+
+      return { success: true, message: 'Tarea eliminada correctamente' };
     },
 
     async complete(taskId: string, payload: TaskCompleteRequest): Promise<TaskCompleteResponse> {

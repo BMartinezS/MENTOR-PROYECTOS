@@ -7,14 +7,16 @@ import {
   View,
   Animated,
 } from 'react-native';
-import { Text, Portal, Modal, FAB } from 'react-native-paper';
+import { Text, Portal, Modal, FAB, SegmentedButtons } from 'react-native-paper';
 import {
   Lightbulb,
   Archive,
+  ArchiveRestore,
   Trash2,
   ChevronRight,
   Plus,
   Tag,
+  Star,
 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { Swipeable, GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -24,6 +26,8 @@ import EmptyState from '../components/EmptyState';
 import Screen from '../components/Screen';
 import { ideasService } from '../../src/services/ideasService';
 import { Idea } from '../../src/types/models';
+
+type StatusFilter = 'active' | 'archived';
 
 function formatDate(dateString?: string) {
   if (!dateString) return '';
@@ -52,13 +56,14 @@ export default function IdeasScreen() {
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [ideaToDelete, setIdeaToDelete] = useState<Idea | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('active');
 
-  const load = useCallback(async (isRefresh = false) => {
+  const load = useCallback(async (isRefresh = false, status: StatusFilter = statusFilter) => {
     try {
       if (isRefresh) setRefreshing(true);
       else setLoading(true);
       setError(null);
-      const data = await ideasService.getIdeas({ status: 'active' });
+      const data = await ideasService.getIdeas({ status });
       setIdeas(data);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'No se pudieron cargar las ideas');
@@ -66,15 +71,19 @@ export default function IdeasScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [statusFilter]);
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    void load(false, statusFilter);
+  }, [statusFilter]);
 
   const handleRefresh = useCallback(() => {
-    void load(true);
-  }, [load]);
+    void load(true, statusFilter);
+  }, [load, statusFilter]);
+
+  const handleStatusFilterChange = useCallback((value: string) => {
+    setStatusFilter(value as StatusFilter);
+  }, []);
 
   const handleArchive = useCallback(async (idea: Idea) => {
     try {
@@ -82,6 +91,15 @@ export default function IdeasScreen() {
       setIdeas((prev) => prev.filter((i) => i.id !== idea.id));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'No se pudo archivar');
+    }
+  }, []);
+
+  const handleUnarchive = useCallback(async (idea: Idea) => {
+    try {
+      await ideasService.unarchiveIdea(idea.id);
+      setIdeas((prev) => prev.filter((i) => i.id !== idea.id));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'No se pudo desarchivar');
     }
   }, []);
 
@@ -111,6 +129,7 @@ export default function IdeasScreen() {
       dragX: Animated.AnimatedInterpolation<number>,
       idea: Idea
     ) => {
+      const isArchived = statusFilter === 'archived';
       const translateX = dragX.interpolate({
         inputRange: [-160, 0],
         outputRange: [0, 160],
@@ -119,13 +138,23 @@ export default function IdeasScreen() {
 
       return (
         <Animated.View style={[styles.swipeActions, { transform: [{ translateX }] }]}>
-          <Pressable
-            style={[styles.swipeButton, styles.archiveButton]}
-            onPress={() => handleArchive(idea)}
-          >
-            <Archive size={20} color="#FFFFFF" />
-            <Text style={styles.swipeButtonText}>Archivar</Text>
-          </Pressable>
+          {isArchived ? (
+            <Pressable
+              style={[styles.swipeButton, styles.unarchiveButton]}
+              onPress={() => handleUnarchive(idea)}
+            >
+              <ArchiveRestore size={20} color="#FFFFFF" />
+              <Text style={styles.swipeButtonText}>Desarchivar</Text>
+            </Pressable>
+          ) : (
+            <Pressable
+              style={[styles.swipeButton, styles.archiveButton]}
+              onPress={() => handleArchive(idea)}
+            >
+              <Archive size={20} color="#FFFFFF" />
+              <Text style={styles.swipeButtonText}>Archivar</Text>
+            </Pressable>
+          )}
           <Pressable
             style={[styles.swipeButton, styles.deleteButton]}
             onPress={() => confirmDelete(idea)}
@@ -136,8 +165,25 @@ export default function IdeasScreen() {
         </Animated.View>
       );
     },
-    [handleArchive, confirmDelete]
+    [handleArchive, handleUnarchive, confirmDelete, statusFilter]
   );
+
+  const renderPriorityStars = useCallback((priority: number) => {
+    const stars = Math.min(Math.max(priority, 0), 5);
+    if (stars === 0) return null;
+    return (
+      <View style={styles.priorityContainer}>
+        {Array.from({ length: stars }).map((_, index) => (
+          <Star
+            key={index}
+            size={10}
+            color={COLORS.warning}
+            fill={COLORS.warning}
+          />
+        ))}
+      </View>
+    );
+  }, []);
 
   const renderIdea = useCallback(
     ({ item }: { item: Idea }) => (
@@ -157,9 +203,12 @@ export default function IdeasScreen() {
             <Lightbulb size={20} color={COLORS.warning} />
           </View>
           <View style={styles.ideaContent}>
-            <Text style={styles.ideaTitle} numberOfLines={1}>
-              {item.title}
-            </Text>
+            <View style={styles.titleRow}>
+              <Text style={styles.ideaTitle} numberOfLines={1}>
+                {item.title}
+              </Text>
+              {renderPriorityStars(item.priority)}
+            </View>
             <View style={styles.ideaMeta}>
               {item.tags.length > 0 && (
                 <View style={styles.tagsRow}>
@@ -177,21 +226,31 @@ export default function IdeasScreen() {
         </Pressable>
       </Swipeable>
     ),
-    [renderRightActions, router]
+    [renderRightActions, router, renderPriorityStars]
   );
 
   const renderHeader = useCallback(
     () => (
       <View style={styles.headerContainer}>
-        <View style={styles.titleRow}>
+        <View style={styles.headerTitleRow}>
           <View>
             <Text style={styles.headerTitle}>Ideas</Text>
             <Text style={styles.headerSubtitle}>
-              {ideas.length} idea{ideas.length !== 1 ? 's' : ''} guardada
+              {ideas.length} idea{ideas.length !== 1 ? 's' : ''} {statusFilter === 'archived' ? 'archivada' : 'guardada'}
               {ideas.length !== 1 ? 's' : ''}
             </Text>
           </View>
         </View>
+
+        <SegmentedButtons
+          value={statusFilter}
+          onValueChange={handleStatusFilterChange}
+          buttons={[
+            { value: 'active', label: 'Activas' },
+            { value: 'archived', label: 'Archivadas' },
+          ]}
+          style={styles.segmentedButtons}
+        />
 
         {error && (
           <View style={styles.errorBanner}>
@@ -199,17 +258,30 @@ export default function IdeasScreen() {
           </View>
         )}
 
-        <View style={styles.infoCard}>
-          <View style={styles.infoIconWrapper}>
-            <Lightbulb size={18} color={COLORS.warning} />
+        {statusFilter === 'active' && (
+          <View style={styles.infoCard}>
+            <View style={styles.infoIconWrapper}>
+              <Lightbulb size={18} color={COLORS.warning} />
+            </View>
+            <Text style={styles.infoText}>
+              Guarda tus ideas y promuevelas a proyectos cuando estes listo
+            </Text>
           </View>
-          <Text style={styles.infoText}>
-            Guarda tus ideas y promuevelas a proyectos cuando estes listo
-          </Text>
-        </View>
+        )}
+
+        {statusFilter === 'archived' && (
+          <View style={styles.infoCard}>
+            <View style={[styles.infoIconWrapper, { backgroundColor: `${COLORS.secondary}20` }]}>
+              <Archive size={18} color={COLORS.secondary} />
+            </View>
+            <Text style={styles.infoText}>
+              Ideas archivadas. Desliza para desarchivar o eliminar.
+            </Text>
+          </View>
+        )}
       </View>
     ),
-    [ideas.length, error]
+    [ideas.length, error, statusFilter, handleStatusFilterChange]
   );
 
   const renderSkeleton = useCallback(
@@ -249,6 +321,11 @@ export default function IdeasScreen() {
           ListEmptyComponent={
             loading ? (
               renderSkeleton()
+            ) : statusFilter === 'archived' ? (
+              <EmptyState
+                title="No tienes ideas archivadas"
+                description="Las ideas que archives apareceran aqui"
+              />
             ) : (
               <EmptyState
                 title="No tienes ideas guardadas"
@@ -329,10 +406,25 @@ const styles = StyleSheet.create({
     gap: SPACING(2.5),
     marginBottom: SPACING(2.5),
   },
-  titleRow: {
+  headerTitleRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
+  },
+  segmentedButtons: {
+    backgroundColor: COLORS.backgroundAlt,
+    borderRadius: RADIUS.md,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flex: 1,
+  },
+  priorityContainer: {
+    flexDirection: 'row',
+    gap: 2,
+    marginLeft: SPACING(1),
   },
   headerTitle: {
     fontSize: 28,
@@ -446,6 +538,9 @@ const styles = StyleSheet.create({
   },
   archiveButton: {
     backgroundColor: COLORS.secondary,
+  },
+  unarchiveButton: {
+    backgroundColor: COLORS.tertiary,
   },
   deleteButton: {
     backgroundColor: COLORS.danger,
