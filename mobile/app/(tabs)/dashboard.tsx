@@ -14,7 +14,10 @@ import ProjectCard from '../components/ProjectCard';
 import Screen from '../components/Screen';
 import SectionHeading from '../components/SectionHeading';
 import { ProjectCardSkeleton, CheckinCardSkeleton } from '../components/SkeletonLoaderSimple';
+import StreakBadge from '../components/StreakBadge';
+import XPBadge from '../components/XPBadge';
 import { api, isMockApi } from '../../src/services/api';
+import { getMyStats, UserStats } from '../../src/services/statsService';
 import { Checkin, Project } from '../../src/types/models';
 
 /**
@@ -28,6 +31,7 @@ export default function DashboardScreen() {
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [pendingCheckins, setPendingCheckins] = useState<Checkin[]>([]);
+  const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -35,12 +39,14 @@ export default function DashboardScreen() {
   const load = async () => {
     try {
       setError(null);
-      const [projectsResponse, checkinsResponse] = await Promise.all([
+      const [projectsResponse, checkinsResponse, statsResponse] = await Promise.all([
         api.projects.list(),
         api.checkins.pending().catch(() => []),
+        getMyStats().catch(() => null),
       ]);
       setProjects(projectsResponse);
       setPendingCheckins(checkinsResponse);
+      setUserStats(statsResponse);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'No se pudieron cargar los datos');
     } finally {
@@ -131,6 +137,17 @@ export default function DashboardScreen() {
       >
         <AppHeader onPrimaryAction={() => router.push('/project/new')} />
 
+        {/* User Stats Row - Streak and XP */}
+        {userStats && (
+          <View style={styles.userStatsRow}>
+            <StreakBadge
+              currentStreak={userStats.currentStreak}
+              longestStreak={userStats.longestStreak}
+            />
+            <XPBadge totalXP={userStats.totalXP} />
+          </View>
+        )}
+
         {error && (
           <View style={styles.errorBanner}>
             <Text style={styles.errorText}>{error}</Text>
@@ -215,6 +232,13 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: SPACING(2.5),
     paddingBottom: SPACING(4),
+  },
+  userStatsRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    gap: SPACING(1.5),
+    marginBottom: SPACING(2),
   },
   errorBanner: {
     backgroundColor: `${COLORS.danger}15`,

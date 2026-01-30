@@ -510,6 +510,8 @@ export const mockApi = {
           completed: payload.completed,
           notes: payload.notes,
           blockedReason: payload.blockedReason ?? null,
+          learnings: payload.learnings,
+          blockers: payload.blockers,
         },
       };
 

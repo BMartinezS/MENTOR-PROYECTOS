@@ -1,5 +1,5 @@
 import { Redirect, Tabs } from 'expo-router';
-import { LayoutDashboard, CheckCircle2, User, Bell } from 'lucide-react-native';
+import { LayoutDashboard, Lightbulb, CheckCircle2, User, Bell } from 'lucide-react-native';
 
 import { useAuth } from '../../src/contexts/AuthContext';
 import { COLORS, RADIUS } from '../../constants/theme';
@@ -52,6 +52,15 @@ export default function TabsLayout() {
           title: 'Inicio',
           tabBarIcon: ({ color, size }) => (
             <LayoutDashboard size={22} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="ideas"
+        options={{
+          title: 'Ideas',
+          tabBarIcon: ({ color, size }) => (
+            <Lightbulb size={22} color={color} />
           ),
         }}
       />

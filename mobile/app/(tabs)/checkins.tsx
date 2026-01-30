@@ -1,15 +1,18 @@
 import { useEffect, useState } from 'react';
 import { FlatList, StyleSheet, View, Pressable, TextInput as RNTextInput, RefreshControl } from 'react-native';
 import { Text, Portal, Modal } from 'react-native-paper';
-import { RefreshCw, MessageSquare, X, Send } from 'lucide-react-native';
+import { RefreshCw, MessageSquare, X, ChevronRight } from 'lucide-react-native';
 
 import { COLORS, SPACING, RADIUS, SHADOWS, MINIMAL_CARD, MINIMAL_INPUT } from '../../constants/theme';
 import CheckinCard from '../components/CheckinCard';
 import EmptyState from '../components/EmptyState';
 import Screen from '../components/Screen';
 import { CheckinCardSkeleton } from '../components/SkeletonLoaderSimple';
+import ReflectionPrompt, { ReflectionData } from '../components/ReflectionPrompt';
 import { api } from '../../src/services/api';
 import { Checkin } from '../../src/types/models';
+
+type ModalStep = 'notes' | 'reflection';
 
 type RespondState = {
   checkin: Checkin;
@@ -29,6 +32,7 @@ export default function CheckinsScreen() {
   const [error, setError] = useState<string | null>(null);
 
   const [respondState, setRespondState] = useState<RespondState | null>(null);
+  const [modalStep, setModalStep] = useState<ModalStep>('notes');
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -56,10 +60,20 @@ export default function CheckinsScreen() {
 
   const openRespond = (checkin: Checkin, completed: boolean) => {
     setNotes('');
+    setModalStep('notes');
     setRespondState({ checkin, completed });
   };
 
-  const submitRespond = async () => {
+  const closeModal = () => {
+    setRespondState(null);
+    setModalStep('notes');
+  };
+
+  const goToReflection = () => {
+    setModalStep('reflection');
+  };
+
+  const submitRespond = async (reflection?: ReflectionData) => {
     if (!respondState) return;
 
     try {
@@ -67,14 +81,24 @@ export default function CheckinsScreen() {
       await api.checkins.respond(respondState.checkin.id, {
         completed: respondState.completed,
         notes: notes.trim() ? notes.trim() : undefined,
+        learnings: reflection?.learnings,
+        blockers: reflection?.blockers,
       });
-      setRespondState(null);
+      closeModal();
       await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'No se pudo responder');
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleReflectionSubmit = (reflection: ReflectionData) => {
+    void submitRespond(reflection);
+  };
+
+  const handleReflectionSkip = () => {
+    void submitRespond();
   };
 
   const renderCheckin = ({ item }: { item: Checkin }) => (
@@ -171,76 +195,84 @@ export default function CheckinsScreen() {
       <Portal>
         <Modal
           visible={!!respondState}
-          onDismiss={() => setRespondState(null)}
+          onDismiss={closeModal}
           contentContainerStyle={styles.modalContainer}
         >
           <View style={styles.modalContent}>
             {/* Modal Header */}
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Responder check-in</Text>
+              <Text style={styles.modalTitle}>
+                {modalStep === 'notes' ? 'Responder check-in' : 'Reflexion'}
+              </Text>
               <Pressable
-                onPress={() => setRespondState(null)}
+                onPress={closeModal}
                 style={styles.modalCloseButton}
               >
                 <X size={20} color={COLORS.textMuted} />
               </Pressable>
             </View>
 
-            {/* Status indicator */}
-            <View style={[
-              styles.statusIndicator,
-              { backgroundColor: respondState?.completed ? `${COLORS.secondary}20` : `${COLORS.danger}15` }
-            ]}>
-              <Text style={[
-                styles.statusText,
-                { color: respondState?.completed ? COLORS.secondary : COLORS.danger }
-              ]}>
-                {respondState?.completed ? 'Sí, lo hice' : 'No pude'}
-              </Text>
-            </View>
+            {modalStep === 'notes' ? (
+              <>
+                {/* Status indicator */}
+                <View style={[
+                  styles.statusIndicator,
+                  { backgroundColor: respondState?.completed ? `${COLORS.secondary}20` : `${COLORS.danger}15` }
+                ]}>
+                  <Text style={[
+                    styles.statusText,
+                    { color: respondState?.completed ? COLORS.secondary : COLORS.danger }
+                  ]}>
+                    {respondState?.completed ? 'Si, lo hice' : 'No pude'}
+                  </Text>
+                </View>
 
-            {/* Notes input */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Notas (opcional)</Text>
-              <RNTextInput
-                placeholder="Agrega contexto sobre tu progreso..."
-                value={notes}
-                onChangeText={setNotes}
-                multiline
-                numberOfLines={4}
-                style={styles.notesInput}
-                placeholderTextColor={COLORS.textLight}
-                textAlignVertical="top"
+                {/* Notes input */}
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Notas (opcional)</Text>
+                  <RNTextInput
+                    placeholder="Agrega contexto sobre tu progreso..."
+                    value={notes}
+                    onChangeText={setNotes}
+                    multiline
+                    numberOfLines={4}
+                    style={styles.notesInput}
+                    placeholderTextColor={COLORS.textLight}
+                    textAlignVertical="top"
+                  />
+                </View>
+
+                {/* Actions */}
+                <View style={styles.modalActions}>
+                  <Pressable
+                    onPress={closeModal}
+                    style={({ pressed }) => [
+                      styles.cancelButton,
+                      pressed && styles.cancelButtonPressed,
+                    ]}
+                  >
+                    <Text style={styles.cancelButtonText}>Cancelar</Text>
+                  </Pressable>
+
+                  <Pressable
+                    onPress={goToReflection}
+                    style={({ pressed }) => [
+                      styles.submitButton,
+                      pressed && styles.submitButtonPressed,
+                    ]}
+                  >
+                    <Text style={styles.submitButtonText}>Continuar</Text>
+                    <ChevronRight size={16} color="#FFFFFF" />
+                  </Pressable>
+                </View>
+              </>
+            ) : (
+              <ReflectionPrompt
+                onSubmit={handleReflectionSubmit}
+                onSkip={handleReflectionSkip}
+                submitting={submitting}
               />
-            </View>
-
-            {/* Actions */}
-            <View style={styles.modalActions}>
-              <Pressable
-                onPress={() => setRespondState(null)}
-                style={({ pressed }) => [
-                  styles.cancelButton,
-                  pressed && styles.cancelButtonPressed,
-                ]}
-              >
-                <Text style={styles.cancelButtonText}>Cancelar</Text>
-              </Pressable>
-
-              <Pressable
-                onPress={submitRespond}
-                disabled={submitting}
-                style={({ pressed }) => [
-                  styles.submitButton,
-                  pressed && styles.submitButtonPressed,
-                  submitting && styles.submitButtonDisabled,
-                ]}
-              >
-                <Send size={16} color="#FFFFFF" />
-                <Text style={styles.submitButtonText}>
-                  {submitting ? 'Enviando...' : 'Enviar'}
-                </Text>
-              </Pressable>
-            </View>
+            )}
           </View>
         </Modal>
       </Portal>

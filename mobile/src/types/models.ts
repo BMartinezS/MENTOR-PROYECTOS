@@ -142,6 +142,8 @@ export type Checkin = {
     completed?: boolean;
     notes?: string;
     blockedReason?: string | null;
+    learnings?: string;
+    blockers?: string;
   };
   Project?: {
     title?: string;
@@ -152,6 +154,8 @@ export type RespondCheckinRequest = {
   completed: boolean;
   notes?: string;
   blockedReason?: string | null;
+  learnings?: string;
+  blockers?: string;
 };
 
 export type WeeklyReview = {
@@ -233,4 +237,38 @@ export type UpdatePhaseRequest = {
 
 export type ReorderPhasesRequest = {
   orderedPhaseIds: string[];
+};
+
+// Ideas (Idea Backlog)
+export type Idea = {
+  id: string;
+  title: string;
+  description?: string | null;
+  tags: string[];
+  status: 'active' | 'archived' | 'promoted';
+  priority: number;
+  promotedToProjectId?: string | null;
+  createdAt: string;
+};
+
+export type IdeasListResponse = {
+  ideas: Idea[];
+};
+
+export type CreateIdeaRequest = {
+  title: string;
+  description?: string;
+  tags?: string[];
+};
+
+export type UpdateIdeaRequest = {
+  title?: string;
+  description?: string | null;
+  tags?: string[];
+  priority?: number;
+};
+
+export type PromoteIdeaResponse = {
+  idea: Idea;
+  project: Project;
 };
