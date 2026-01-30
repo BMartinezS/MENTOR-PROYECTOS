@@ -6,17 +6,21 @@
     "orientation": "portrait",
     "scheme": "mentor-proyectos",
     "icon": "./assets/images/icon.png",
+    "userInterfaceStyle": "automatic",
+    "owner": "warlocklabs",
     "splash": {
       "image": "./assets/images/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#050312"
     },
     "ios": {
+      "bundleIdentifier": "cl.warlocklabs.mentor",
       "infoPlist": {
         "UIBackgroundModes": ["background-fetch", "remote-notification"]
       }
     },
     "android": {
+      "package": "cl.warlocklabs.mentor",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#050312"
@@ -26,6 +30,12 @@
         "android.permission.VIBRATE",
         "android.permission.WAKE_LOCK"
       ]
+    },
+    "updates": {
+      "url": "https://u.expo.dev/TU-PROJECT-ID-REAL-AQUI"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
     },
     "web": {
       "favicon": "./assets/images/favicon.png"

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { FlatList, StyleSheet, View, Pressable, TextInput as RNTextInput } from 'react-native';
+import { FlatList, StyleSheet, View, Pressable, TextInput as RNTextInput, RefreshControl } from 'react-native';
 import { Text, Portal, Modal } from 'react-native-paper';
 import { RefreshCw, MessageSquare, X, Send } from 'lucide-react-native';
 
@@ -143,6 +143,14 @@ export default function CheckinsScreen() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
         ListHeaderComponent={renderHeader}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={COLORS.primary}
+            colors={[COLORS.primary]}
+          />
+        }
         ListEmptyComponent={
           loading ? (
             <View style={styles.skeletonContainer}>

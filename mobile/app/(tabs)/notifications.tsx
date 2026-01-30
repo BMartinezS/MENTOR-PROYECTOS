@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, View, Alert, Pressable, Switch } from 'react-native';
+import { ScrollView, StyleSheet, View, Alert, Pressable, Switch, RefreshControl } from 'react-native';
 import { Text } from 'react-native-paper';
 import {
   Bell,
@@ -48,6 +48,7 @@ export default function NotificationsScreen() {
   } = useNotifications();
 
   const [localPreferences, setLocalPreferences] = useState(preferences);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     setLocalPreferences(preferences);
@@ -60,6 +61,15 @@ export default function NotificationsScreen() {
       refreshStats();
     }
   }, [isInitialized]);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await refreshStats();
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const handlePermissionRequest = async () => {
     try {
@@ -174,7 +184,17 @@ export default function NotificationsScreen() {
 
   return (
     <Screen padded={false}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={COLORS.primary}
+            colors={[COLORS.primary]}
+          />
+        }
+      >
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Alertas</Text>
