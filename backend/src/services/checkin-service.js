@@ -3,6 +3,7 @@ import { Op } from 'sequelize';
 
 import { AppError } from '../errors/app-error.js';
 import { Checkin, Project, Task, User } from '../models/index.js';
+import * as StreakService from './streak-service.js';
 
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://localhost:3001';
 const FREE_CHECKIN_WEEKLY_LIMIT = 2;
@@ -51,10 +52,18 @@ export async function respond(checkinId, userId, response) {
     response,
   });
 
+  // Update streak when user responds to a check-in
+  const streakResult = await StreakService.updateStreak(userId);
+
+  // Award XP for completing a check-in
+  const XP_CHECKIN_COMPLETE = 10;
+  await StreakService.addXP(userId, XP_CHECKIN_COMPLETE, 'checkin_complete');
+
   return {
     id: updated.id,
     respondedAt: updated.respondedAt,
     response: updated.response,
+    streak: streakResult,
   };
 }
 

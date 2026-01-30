@@ -9,6 +9,9 @@ import planIterationRoutes from './plan-iterations.js';
 import notificationRoutes from './notifications.js';
 import webhookRoutes from './webhooks.js';
 import subscriptionRoutes from './subscription.js';
+import achievementRoutes from './achievements.js';
+import ideaRoutes from './ideas.js';
+import statsRoutes from './stats.js';
 
 const router = express.Router();
 
@@ -21,5 +24,8 @@ router.use('/weekly-reviews', weeklyReviewRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/webhooks', webhookRoutes);
 router.use('/subscription', subscriptionRoutes);
+router.use('/achievements', achievementRoutes);
+router.use('/ideas', ideaRoutes);
+router.use('/stats', statsRoutes);
 
 export default router;

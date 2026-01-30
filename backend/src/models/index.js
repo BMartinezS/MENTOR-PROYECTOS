@@ -9,6 +9,10 @@ import ProgressLog from './ProgressLog.js';
 import WeeklyReview from './WeeklyReview.js';
 import PlanIteration from './PlanIteration.js';
 import WebhookEvent from './WebhookEvent.js';
+import Idea from './Idea.js';
+import UserStats from './UserStats.js';
+import Achievement from './Achievement.js';
+import UserAchievement from './UserAchievement.js';
 
 User.hasMany(Project, { foreignKey: 'userId' });
 Project.belongsTo(User, { foreignKey: 'userId' });
@@ -49,6 +53,18 @@ PlanIteration.belongsTo(User, { foreignKey: 'userId' });
 Project.hasMany(PlanIteration, { foreignKey: 'projectId' });
 PlanIteration.belongsTo(Project, { foreignKey: 'projectId' });
 
+User.hasMany(Idea, { foreignKey: 'userId' });
+Idea.belongsTo(User, { foreignKey: 'userId' });
+Idea.belongsTo(Project, { foreignKey: 'promotedToProjectId', as: 'promotedToProject' });
+
+User.hasOne(UserStats, { foreignKey: 'userId' });
+UserStats.belongsTo(User, { foreignKey: 'userId' });
+
+User.hasMany(UserAchievement, { foreignKey: 'userId' });
+UserAchievement.belongsTo(User, { foreignKey: 'userId' });
+UserAchievement.belongsTo(Achievement, { foreignKey: 'achievementId', targetKey: 'id' });
+Achievement.hasMany(UserAchievement, { foreignKey: 'achievementId', sourceKey: 'id' });
+
 export {
   User,
   Project,
@@ -61,4 +77,8 @@ export {
   WeeklyReview,
   PlanIteration,
   WebhookEvent,
+  Idea,
+  UserStats,
+  Achievement,
+  UserAchievement,
 };
