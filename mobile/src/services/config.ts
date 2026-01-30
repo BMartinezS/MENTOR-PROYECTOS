@@ -50,13 +50,18 @@ const manifestUseMock = parseBoolean(extra.useMockApi ?? undefined);
 export const USE_MOCK_API = envUseMock ?? manifestUseMock ?? false;
 
 // RevenueCat API Keys
-// Configure these in app.json extra or environment variables before production
+// For production: use separate keys per platform
+// For development/testing: a single key works for both
+const envRevenueCatKey = process.env.EXPO_PUBLIC_REVENUECAT_API_KEY;
 const envRevenueCatIOS = process.env.EXPO_PUBLIC_REVENUECAT_API_KEY_IOS;
 const envRevenueCatAndroid = process.env.EXPO_PUBLIC_REVENUECAT_API_KEY_ANDROID;
 const manifestRevenueCatIOS = extra.revenueCatApiKeyIOS;
 const manifestRevenueCatAndroid = extra.revenueCatApiKeyAndroid;
 
+// Single key fallback (useful for development)
+const fallbackKey = envRevenueCatKey ?? 'YOUR_REVENUECAT_API_KEY';
+
 export const REVENUECAT_API_KEY = {
-  ios: envRevenueCatIOS ?? manifestRevenueCatIOS ?? 'YOUR_REVENUECAT_IOS_API_KEY',
-  android: envRevenueCatAndroid ?? manifestRevenueCatAndroid ?? 'YOUR_REVENUECAT_ANDROID_API_KEY',
+  ios: envRevenueCatIOS ?? manifestRevenueCatIOS ?? fallbackKey,
+  android: envRevenueCatAndroid ?? manifestRevenueCatAndroid ?? fallbackKey,
 };

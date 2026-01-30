@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
 import { CustomerInfo, PurchasesOfferings, PurchasesPackage } from 'react-native-purchases';
-import { Alert } from 'react-native';
+import { Alert, Platform } from 'react-native';
 
 import {
   purchaseService,
@@ -9,9 +9,12 @@ import {
   PurchaseState,
 } from '../services/purchaseService';
 import { useAuth } from './AuthContext';
+import { REVENUECAT_API_KEY } from '../services/config';
 
-// RevenueCat API Key from environment variables
-const REVENUECAT_API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_API_KEY || 'test_key';
+// Select the correct API key based on platform
+const getRevenueCatApiKey = (): string => {
+  return Platform.OS === 'ios' ? REVENUECAT_API_KEY.ios : REVENUECAT_API_KEY.android;
+};
 
 type PurchaseContextValue = {
   // Estado de suscripción
@@ -69,7 +72,8 @@ export function PurchaseProvider({ children }: { children: React.ReactNode }) {
       setLoading(true);
 
       // Inicializar RevenueCat con el ID del usuario
-      await purchaseService.initialize(REVENUECAT_API_KEY, user.id.toString());
+      const apiKey = getRevenueCatApiKey();
+      await purchaseService.initialize(apiKey, user.id.toString());
 
       // Obtener información del cliente
       const customerInfo = await purchaseService.getCustomerInfo();
