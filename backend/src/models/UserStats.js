@@ -53,15 +53,7 @@ const UserStats = sequelize.define(
   {
     timestamps: true,
     underscored: true,
-    indexes: [
-      {
-        fields: ['user_id'],
-        unique: true,
-      },
-      {
-        fields: ['total_xp'],
-      },
-    ],
+    tableName: 'user_stats',
   }
 );
 

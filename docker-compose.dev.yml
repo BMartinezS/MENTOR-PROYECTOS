@@ -36,32 +36,6 @@ services:
       start_period: 10s
 
   # =====================================
-  # pgAdmin for Database Management
-  # =====================================
-  pgadmin:
-    image: dpage/pgadmin4:8
-    container_name: mentor-pgadmin-dev
-    restart: unless-stopped
-
-    depends_on:
-      postgres:
-        condition: service_healthy
-
-    environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@mentor.dev}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin123}
-      PGADMIN_DISABLE_POSTFIX: true
-
-    volumes:
-      - pgadmin_data:/var/lib/pgadmin
-
-    ports:
-      - "${PGADMIN_PORT:-5050}:80"
-
-    networks:
-      - mentor-dev-network
-
-  # =====================================
   # Backend API Service (Development)
   # =====================================
   backend:
@@ -186,10 +160,6 @@ networks:
 volumes:
   postgres_dev_data:
     name: mentor_postgres_dev_data
-    driver: local
-
-  pgadmin_data:
-    name: mentor_pgadmin_data
     driver: local
 
   backend_dev_logs:
