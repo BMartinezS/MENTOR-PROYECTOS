@@ -7,9 +7,9 @@ import { useLocalSearchParams } from 'expo-router';
 import { COLORS, RADIUS, SPACING } from '../../constants/theme';
 import Screen from '../components/Screen';
 import SectionHeading from '../components/SectionHeading';
-import { useAuth } from '../contexts/AuthContext';
-import { api } from '../services/api';
-import { Phase, Task } from '../types/models';
+import { useAuth } from '../../src/contexts/AuthContext';
+import { api } from '../../src/services/api';
+import { Phase, Task } from '../../src/types/models';
 
 export default function TaskDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();

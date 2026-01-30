@@ -54,30 +54,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string) => {
-    const result = await api.auth.login({ email, password });
+    try {
+      console.log('🔐 Login iniciado con email:', email);
+      console.log('🌐 API URL:', process.env.EXPO_PUBLIC_API_URL);
 
-    setAuthToken(result.token);
-    await AsyncStorage.setItem(TOKEN_STORAGE_KEY, result.token);
+      const result = await api.auth.login({ email, password });
+      console.log('✅ Login exitoso:', result);
 
-    setToken(result.token);
-    setUser(result.user);
-    router.replace('/(tabs)/dashboard');
+      setAuthToken(result.token);
+      await AsyncStorage.setItem(TOKEN_STORAGE_KEY, result.token);
+
+      setToken(result.token);
+      setUser(result.user);
+      router.replace('/(tabs)/dashboard');
+    } catch (error) {
+      console.log('❌ Error en login:', error);
+      // Re-throw the error so it can be handled by the component
+      throw error;
+    }
   };
 
   const register = async (email: string, password: string, name: string, timezone?: string) => {
-    const result = await api.auth.register({
-      email,
-      password,
-      name,
-      timezone,
-    });
+    try {
+      const result = await api.auth.register({
+        email,
+        password,
+        name,
+        timezone,
+      });
 
-    setAuthToken(result.token);
-    await AsyncStorage.setItem(TOKEN_STORAGE_KEY, result.token);
+      setAuthToken(result.token);
+      await AsyncStorage.setItem(TOKEN_STORAGE_KEY, result.token);
 
-    setToken(result.token);
-    setUser(result.user);
-    router.replace('/(tabs)/dashboard');
+      setToken(result.token);
+      setUser(result.user);
+      router.replace('/(tabs)/dashboard');
+    } catch (error) {
+      // Re-throw the error so it can be handled by the component
+      throw error;
+    }
   };
 
   const logout = async () => {

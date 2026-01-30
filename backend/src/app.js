@@ -11,6 +11,11 @@ const app = express();
 
 app.use(helmet());
 app.use(cors(getCorsOptions()));
+
+// Raw body parsing for webhook signature verification (must come before JSON parsing)
+// Store raw body in req.rawBody for signature verification
+app.use('/api/webhooks', express.raw({ type: 'application/json' }));
+
 app.use(express.json());
 
 app.get('/health', (req, res) => {

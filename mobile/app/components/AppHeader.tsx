@@ -1,13 +1,19 @@
-import { StyleSheet, View } from 'react-native';
-import { Avatar, IconButton, Text } from 'react-native-paper';
+import { StyleSheet, View, Pressable } from 'react-native';
+import { Text } from 'react-native-paper';
+import { Plus } from 'lucide-react-native';
 
-import { COLORS, RADIUS, SPACING } from '../../constants/theme';
-import { useAuth } from '../contexts/AuthContext';
+import { COLORS, RADIUS, SPACING, SHADOWS } from '../../constants/theme';
+import { useAuth } from '../../src/contexts/AuthContext';
 
 type Props = {
   onPrimaryAction?: () => void;
 };
 
+/**
+ * Minimalist AppHeader
+ * - Clean, subtle design
+ * - Warm greeting
+ */
 export default function AppHeader({ onPrimaryAction }: Props) {
   const { user } = useAuth();
 
@@ -20,19 +26,27 @@ export default function AppHeader({ onPrimaryAction }: Props) {
 
   return (
     <View style={styles.container}>
-      <View>
-        <Text variant="titleMedium" style={styles.greeting}>
-          Hola {user?.name ?? 'emprendedor/a'},
+      <View style={styles.greetingContainer}>
+        <Text style={styles.greeting}>
+          Hola, {user?.name ?? 'emprendedor'}
         </Text>
-        <Text style={styles.subtitle}>Hagamos avanzar tu proyecto 🚀</Text>
+        <Text style={styles.subtitle}>¿Qué vas a lograr hoy?</Text>
       </View>
 
       <View style={styles.actions}>
-        {onPrimaryAction ? (
-          <IconButton icon="plus" mode="contained-tonal" onPress={onPrimaryAction} />
-        ) : null}
-        <View style={styles.avatarWrapper}>
-          <Avatar.Text size={44} label={initials} style={styles.avatar} color="white" />
+        {onPrimaryAction && (
+          <Pressable
+            onPress={onPrimaryAction}
+            style={({ pressed }) => [
+              styles.addButton,
+              pressed && styles.addButtonPressed,
+            ]}
+          >
+            <Plus size={22} color="#FFFFFF" strokeWidth={2.5} />
+          </Pressable>
+        )}
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>{initials}</Text>
         </View>
       </View>
     </View>
@@ -44,32 +58,52 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: COLORS.surfaceMuted,
-    padding: SPACING(2),
-    borderRadius: RADIUS.lg,
+    paddingVertical: SPACING(1),
     marginBottom: SPACING(2),
-    borderWidth: 1,
-    borderColor: COLORS.border,
+  },
+  greetingContainer: {
+    flex: 1,
   },
   greeting: {
     color: COLORS.text,
+    fontSize: 22,
+    fontWeight: '600',
+    letterSpacing: -0.3,
   },
   subtitle: {
     color: COLORS.textMuted,
+    fontSize: 14,
+    marginTop: SPACING(0.25),
   },
   actions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: SPACING(1.5),
   },
-  avatarWrapper: {
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    padding: 3,
+  addButton: {
+    width: 44,
+    height: 44,
+    borderRadius: RADIUS.md,
+    backgroundColor: COLORS.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...SHADOWS.sm,
+  },
+  addButtonPressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.97 }],
   },
   avatar: {
-    backgroundColor: COLORS.primary,
+    width: 44,
+    height: 44,
+    borderRadius: RADIUS.full,
+    backgroundColor: COLORS.backgroundAlt,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: {
+    color: COLORS.text,
+    fontSize: 15,
+    fontWeight: '600',
   },
 });
-

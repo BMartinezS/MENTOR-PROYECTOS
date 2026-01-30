@@ -1,4 +1,4 @@
-import { AuthUser, Checkin, PlanIteration, ProjectDetail, Task, WeeklyReview } from '../types/models';
+import { AuthUser, Checkin, PlanIteration, ProjectDetail, Task, WeeklyReview } from './models';
 
 type MockStore = {
   user: AuthUser;

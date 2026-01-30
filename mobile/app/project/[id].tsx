@@ -17,13 +17,13 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { COLORS, RADIUS, SPACING } from '../../constants/theme';
-import { getProjectAreaConfig, ProjectDetailSection } from '../config/projectAreas';
+import { getProjectAreaConfig, ProjectDetailSection } from '../../src/config/projectAreas';
 import Screen from '../components/Screen';
 import SectionHeading from '../components/SectionHeading';
 import TaskListItem from '../components/TaskListItem';
-import { useAuth } from '../contexts/AuthContext';
-import { api } from '../services/api';
-import { PlanIteration, ProjectDetail, Task } from '../types/models';
+import { useAuth } from '../../src/contexts/AuthContext';
+import { api } from '../../src/services/api';
+import { PlanIteration, ProjectDetail, Task } from '../../src/types/models';
 
 function formatDate(value?: string | null) {
   if (!value) return '';

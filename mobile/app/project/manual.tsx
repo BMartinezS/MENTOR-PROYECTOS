@@ -7,7 +7,7 @@ import { useRouter } from 'expo-router';
 import { COLORS, RADIUS, SPACING } from '../../constants/theme';
 import Screen from '../components/Screen';
 import SectionHeading from '../components/SectionHeading';
-import { api } from '../services/api';
+import { api } from '../../src/services/api';
 
 export default function CreateProjectManualScreen() {
   const router = useRouter();

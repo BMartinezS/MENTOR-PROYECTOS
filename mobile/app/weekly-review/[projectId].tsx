@@ -7,8 +7,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { COLORS, RADIUS, SPACING } from '../../constants/theme';
 import Screen from '../components/Screen';
 import SectionHeading from '../components/SectionHeading';
-import { api } from '../services/api';
-import { WeeklyReview } from '../types/models';
+import { api } from '../../src/services/api';
+import { WeeklyReview } from '../../src/types/models';
 
 export default function WeeklyReviewScreen() {
   const router = useRouter();

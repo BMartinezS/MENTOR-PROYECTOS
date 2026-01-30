@@ -6,6 +6,9 @@ import { startCheckinScheduler } from './jobs/checkin-scheduler.js';
 import { startWeeklyReviewScheduler } from './jobs/weekly-review-scheduler.js';
 import notificationService from './services/notification-service.js';
 
+// Import models to register them with Sequelize before sync
+import './models/index.js';
+
 const PORT = process.env.PORT || 3000;
 
 await initDatabase();

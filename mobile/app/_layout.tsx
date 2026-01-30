@@ -3,9 +3,9 @@ import { StatusBar } from 'expo-status-bar';
 import { PaperProvider } from 'react-native-paper';
 
 import { PAPER_THEME } from '../constants/theme';
-import { AuthProvider } from './contexts/AuthContext';
-import { NotificationProvider } from './contexts/NotificationContext';
-import { PurchaseProvider } from './contexts/PurchaseContext';
+import { AuthProvider } from '../src/contexts/AuthContext';
+import { NotificationProvider } from '../src/contexts/NotificationContext';
+import { PurchaseProvider } from '../src/contexts/PurchaseContext';
 
 export default function RootLayout() {
   return (

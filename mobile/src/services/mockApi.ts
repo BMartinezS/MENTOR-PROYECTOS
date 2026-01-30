@@ -22,7 +22,7 @@ import {
   UpdatePhaseRequest,
   WeeklyReview,
   WeeklyReviewAnswersRequest,
-} from '../types/models';
+} from './models';
 
 import { getMockStore, mockIds } from './mockStore';
 

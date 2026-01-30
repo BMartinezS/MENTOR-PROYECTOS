@@ -1,156 +1,111 @@
-import { Animated, Pressable, StyleSheet, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Chip, Text } from 'react-native-paper';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from 'react-native-paper';
 import { ArrowRight, Calendar, CheckCircle, Target, TrendingUp } from 'lucide-react-native';
 
-import { COLORS, RADIUS, SHADOWS, SPACING } from '../../constants/theme';
-import { getProjectAreaConfig } from '../config/projectAreas';
-import { Project } from '../types/models';
-import { useCardAnimation } from '../utils/animationsSimple';
+import { COLORS, RADIUS, SHADOWS, SPACING, MINIMAL_CARD } from '../../constants/theme';
+import { getProjectAreaConfig } from '../../src/config/projectAreas';
+import { Project } from '../../src/types/models';
 
 type Props = {
   project: Project;
   onPress?: () => void;
 };
 
-type SectionKey = 'progress' | 'milestone' | 'stats';
-
+/**
+ * Minimalist ProjectCard
+ * - Clean white card with subtle shadow
+ * - Soft accent colors
+ * - Generous whitespace
+ */
 export default function ProjectCard({ project, onPress }: Props) {
-  const progress = Math.max(0, Math.min(1, (project.progress ?? 0) / 100));
   const statusLabelMap: Record<string, string> = {
-    active: 'activa',
-    paused: 'pausada',
-    completed: 'completado',
-    cancelled: 'cancelado',
+    active: 'Activo',
+    paused: 'Pausado',
+    completed: 'Completado',
+    cancelled: 'Cancelado',
   };
-  const statusLabel = statusLabelMap[project.status ?? 'active'] ?? 'activa';
-  const { onPressIn, onPressOut, animatedStyle } = useCardAnimation(onPress);
+  const statusLabel = statusLabelMap[project.status ?? 'active'] ?? 'Activo';
   const areaConfig = getProjectAreaConfig(project.area);
   const accent = areaConfig.accent;
   const AreaIcon = areaConfig.icon;
   const StatusIcon = project.status === 'completed' ? CheckCircle : TrendingUp;
   const daysRemaining = formatDaysRemaining(project.daysRemaining, project.targetDate);
 
-  const renderSection = (section: SectionKey) => {
-    if (section === 'progress') {
-      return (
-        <View key="progress" style={styles.progressSection}>
-          <View style={styles.progressHeader}>
-            <View style={styles.progressLabelRow}>
-              <Target size={16} color={accent} />
-              <Text style={styles.progressLabel}>Progreso</Text>
-            </View>
-            <Text style={styles.progressValue}>{project.progress ?? 0}%</Text>
-          </View>
-          <View style={styles.progressBarContainer}>
-            <View style={styles.progressTrack} />
-            <View
-              style={[
-                styles.progressFill,
-                { width: `${project.progress ?? 0}%`, backgroundColor: accent },
-              ]}
-            />
-          </View>
-          <View style={styles.progressDetails}>
-            <View style={styles.progressDetail}>
-              <Text style={styles.detailLabel}>Tareas</Text>
-              <Text style={styles.detailValue}>
-                {project.tasksCompleted || 0} / {project.totalTasks || 0}
-              </Text>
-            </View>
-            <View style={styles.progressDetail}>
-              <Text style={styles.detailLabel}>Fase actual</Text>
-              <Text style={styles.detailValue}>{project.currentPhase || 'Inicio'}</Text>
-            </View>
-            <View style={styles.progressDetail}>
-              <Text style={styles.detailLabel}>Días restantes</Text>
-              <Text style={styles.detailValue}>{daysRemaining ?? '--'}</Text>
-            </View>
-          </View>
-        </View>
-      );
-    }
-
-    if (section === 'milestone' && project.nextMilestone?.title) {
-      return (
-        <View key="milestone" style={styles.milestoneSection}>
-          <Text style={styles.milestoneLabel}>Próximo hito</Text>
-          <Text style={styles.milestoneTitle}>{project.nextMilestone.title}</Text>
-          {project.nextMilestone.dueDate ? (
-            <Text style={styles.milestoneDate}>Meta: {project.nextMilestone.dueDate}</Text>
-          ) : null}
-        </View>
-      );
-    }
-
-    if (section === 'stats') {
-      return null;
-    }
-
-    return null;
-  };
-
-  const orderedSections = areaConfig.cardSectionOrder
-    .map((section) => renderSection(section))
-    .filter(Boolean);
-
   return (
-    <View style={styles.pressable}>
-      <LinearGradient colors={areaConfig.gradient} style={[styles.cardContainer, { borderColor: `${accent}66` }]}>
-        <View style={styles.cardSurface}>
-          <View style={styles.areaRow}>
-            <View style={styles.areaBadge}>
-              <AreaIcon size={18} color={accent} />
-              <Text style={styles.areaBadgeText}>{areaConfig.label}</Text>
-            </View>
-            <Chip compact style={styles.areaChip} textStyle={{ color: '#05020f' }}>
-              {statusLabel}
-            </Chip>
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.card,
+        pressed && styles.cardPressed,
+      ]}
+    >
+      {/* Header */}
+      <View style={styles.header}>
+        <View style={styles.titleRow}>
+          <View style={[styles.iconWrapper, { backgroundColor: `${accent}15` }]}>
+            <AreaIcon size={18} color={accent} />
           </View>
-          <View style={styles.headerTop}>
-            <View style={styles.titleRow}>
-              <StatusIcon size={22} color={accent} />
-              <View style={styles.titleContainer}>
-                <Text style={styles.projectTitle} numberOfLines={1}>
-                  {project.title}
-                </Text>
-                <Text style={styles.progressPercentage}>{project.progress ?? 0}% completado</Text>
-              </View>
-            </View>
-            {project.targetDate ? (
-              <View style={styles.urgencyIndicator}>
-                <Calendar size={16} color={COLORS.textMuted} />
-                <Text style={styles.dateText}>{project.targetDate}</Text>
-              </View>
-            ) : null}
-          </View>
-          {project.description ? (
-            <Text style={styles.description} numberOfLines={2}>
-              {project.description}
+          <View style={styles.titleContainer}>
+            <Text style={styles.projectTitle} numberOfLines={1}>
+              {project.title}
             </Text>
-          ) : null}
-
-          {orderedSections.length ? <View style={styles.sections}>{orderedSections}</View> : null}
-
-          {onPress ? (
-            <View style={styles.actionButtonContainer}>
-              <Pressable
-                onPressIn={onPressIn}
-                onPressOut={onPressOut}
-                accessibilityRole="button"
-                accessibilityLabel={`Ver detalles del proyecto ${project.title}`}
-                style={styles.actionButtonPressable}
-              >
-                <Animated.View style={[styles.actionButton, animatedStyle]}>
-                  <Text style={styles.actionText}>Ver detalles</Text>
-                  <ArrowRight size={16} color={accent} />
-                </Animated.View>
-              </Pressable>
-            </View>
-          ) : null}
+            <Text style={styles.areaLabel}>{areaConfig.label}</Text>
+          </View>
         </View>
-      </LinearGradient>
-    </View>
+        <View style={[styles.statusBadge, { backgroundColor: `${accent}15` }]}>
+          <Text style={[styles.statusText, { color: accent }]}>{statusLabel}</Text>
+        </View>
+      </View>
+
+      {/* Description */}
+      {project.description ? (
+        <Text style={styles.description} numberOfLines={2}>
+          {project.description}
+        </Text>
+      ) : null}
+
+      {/* Progress Section */}
+      <View style={styles.progressSection}>
+        <View style={styles.progressHeader}>
+          <Text style={styles.progressLabel}>Progreso</Text>
+          <Text style={styles.progressValue}>{project.progress ?? 0}%</Text>
+        </View>
+        <View style={styles.progressBarContainer}>
+          <View
+            style={[
+              styles.progressFill,
+              { width: `${project.progress ?? 0}%`, backgroundColor: accent },
+            ]}
+          />
+        </View>
+      </View>
+
+      {/* Stats Row */}
+      <View style={styles.statsRow}>
+        <View style={styles.stat}>
+          <Target size={14} color={COLORS.textMuted} />
+          <Text style={styles.statText}>
+            {project.tasksCompleted || 0}/{project.totalTasks || 0} tareas
+          </Text>
+        </View>
+        {project.targetDate ? (
+          <View style={styles.stat}>
+            <Calendar size={14} color={COLORS.textMuted} />
+            <Text style={styles.statText}>
+              {daysRemaining !== null ? `${daysRemaining} días` : project.targetDate}
+            </Text>
+          </View>
+        ) : null}
+      </View>
+
+      {/* Action hint */}
+      {onPress && (
+        <View style={styles.actionHint}>
+          <Text style={styles.actionText}>Ver detalles</Text>
+          <ArrowRight size={16} color={COLORS.primary} />
+        </View>
+      )}
+    </Pressable>
   );
 }
 
@@ -165,174 +120,117 @@ function formatDaysRemaining(existing?: number | null, targetDate?: string | nul
 }
 
 const styles = StyleSheet.create({
-  pressable: {
-    marginBottom: SPACING(3),
+  card: {
+    ...MINIMAL_CARD,
+    padding: SPACING(2.5),
+    marginBottom: SPACING(2),
   },
-  cardContainer: {
-    borderRadius: RADIUS.lg,
-    borderWidth: 1,
-    ...SHADOWS.card,
+  cardPressed: {
+    opacity: 0.95,
+    transform: [{ scale: 0.995 }],
   },
-  cardSurface: {
-    borderRadius: RADIUS.lg,
-    padding: SPACING(2),
-    backgroundColor: COLORS.surfaceGlass,
-    gap: SPACING(1.5),
-  },
-  areaRow: {
+  header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  areaBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING(0.5),
-    paddingVertical: SPACING(0.5),
-    paddingHorizontal: SPACING(1),
-    borderRadius: RADIUS.sm,
-    backgroundColor: 'rgba(0,0,0,0.15)',
-  },
-  areaBadgeText: {
-    color: COLORS.text,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    fontSize: 12,
-  },
-  areaChip: {
-    backgroundColor: COLORS.secondary,
-    height: 28,
-  },
-  headerTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: SPACING(1),
+    alignItems: 'flex-start',
+    marginBottom: SPACING(1.5),
   },
   titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING(1),
     flex: 1,
+    gap: SPACING(1.5),
+  },
+  iconWrapper: {
+    width: 40,
+    height: 40,
+    borderRadius: RADIUS.md,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   titleContainer: {
     flex: 1,
   },
   projectTitle: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: 17,
+    fontWeight: '600',
     color: COLORS.text,
+    marginBottom: 2,
   },
-  progressPercentage: {
-    fontSize: 12,
+  areaLabel: {
+    fontSize: 13,
     color: COLORS.textMuted,
   },
-  urgencyIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING(0.5),
+  statusBadge: {
+    paddingVertical: SPACING(0.5),
+    paddingHorizontal: SPACING(1.5),
+    borderRadius: RADIUS.full,
   },
-  dateText: {
-    color: COLORS.textMuted,
+  statusText: {
     fontSize: 12,
+    fontWeight: '600',
   },
   description: {
     color: COLORS.textMuted,
-  },
-  sections: {
-    gap: SPACING(1.5),
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: SPACING(2),
   },
   progressSection: {
-    gap: SPACING(0.75),
+    marginBottom: SPACING(2),
   },
   progressHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-  },
-  progressLabelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING(0.5),
+    marginBottom: SPACING(1),
   },
   progressLabel: {
-    color: COLORS.text,
-    fontWeight: '600',
+    color: COLORS.textMuted,
+    fontSize: 13,
+    fontWeight: '500',
   },
   progressValue: {
     color: COLORS.text,
-    fontWeight: '700',
+    fontSize: 14,
+    fontWeight: '600',
   },
   progressBarContainer: {
-    height: 10,
-    borderRadius: RADIUS.sm,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    height: 6,
+    borderRadius: RADIUS.full,
+    backgroundColor: COLORS.backgroundAlt,
     overflow: 'hidden',
-  },
-  progressTrack: {
-    ...StyleSheet.absoluteFillObject,
-    borderRadius: RADIUS.sm,
   },
   progressFill: {
     height: '100%',
-    borderRadius: RADIUS.sm,
+    borderRadius: RADIUS.full,
   },
-  progressDetails: {
+  statsRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: SPACING(2),
+    gap: SPACING(3),
+    marginBottom: SPACING(2),
   },
-  progressDetail: {
-    flex: 1,
-  },
-  detailLabel: {
-    color: COLORS.textMuted,
-    fontSize: 12,
-  },
-  detailValue: {
-    color: COLORS.text,
-    fontWeight: '600',
-  },
-  milestoneSection: {
-    backgroundColor: 'rgba(0,0,0,0.25)',
-    borderRadius: RADIUS.md,
-    padding: SPACING(1.5),
-    gap: SPACING(0.5),
-  },
-  milestoneLabel: {
-    color: COLORS.textMuted,
-    fontSize: 12,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-  },
-  milestoneTitle: {
-    color: COLORS.text,
-    fontWeight: '600',
-    fontSize: 16,
-  },
-  milestoneDate: {
-    color: COLORS.textMuted,
-  },
-  actionButtonContainer: {
-    marginTop: SPACING(1.5),
-  },
-  actionButtonPressable: {
-    borderRadius: RADIUS.sm,
-  },
-  actionButton: {
-    borderRadius: RADIUS.sm,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
-    paddingVertical: SPACING(1),
-    paddingHorizontal: SPACING(1.5),
+  stat: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: 'rgba(0,0,0,0.25)',
+    gap: SPACING(0.5),
+  },
+  statText: {
+    fontSize: 13,
+    color: COLORS.textMuted,
+  },
+  actionHint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: SPACING(0.5),
+    paddingTop: SPACING(1.5),
+    borderTopWidth: 1,
+    borderTopColor: COLORS.borderLight,
   },
   actionText: {
-    color: COLORS.text,
-    fontWeight: '600',
-    textTransform: 'uppercase',
+    fontSize: 14,
+    color: COLORS.primary,
+    fontWeight: '500',
   },
 });

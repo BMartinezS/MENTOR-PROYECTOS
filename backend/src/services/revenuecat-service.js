@@ -1,5 +1,5 @@
 import { AppError } from '../errors/app-error.js';
-import { User } from '../models/index.js';
+import { User, WebhookEvent } from '../models/index.js';
 
 // Eventos de RevenueCat que nos interesan
 const SUBSCRIPTION_EVENTS = {
@@ -33,12 +33,21 @@ export async function processWebhookEvent(webhookPayload) {
     return;
   }
 
-  const { type, app_user_id: appUserId, subscriber_attributes, entitlements } = event;
+  const { type, app_user_id: appUserId, id: eventId } = event;
 
   // Validar que tenemos un user ID
   if (!appUserId) {
     console.warn('RevenueCat webhook missing app_user_id');
     return;
+  }
+
+  // Check for duplicate event (idempotency)
+  if (eventId) {
+    const existingEvent = await WebhookEvent.findOne({ where: { eventId } });
+    if (existingEvent) {
+      console.log(`Duplicate webhook event ${eventId} - skipping`);
+      return;
+    }
   }
 
   console.log(`Processing RevenueCat event: ${type} for user ${appUserId}`);
@@ -80,6 +89,16 @@ export async function processWebhookEvent(webhookPayload) {
     default:
       console.log(`Unhandled RevenueCat event type: ${type}`);
   }
+
+  // Record successful processing for idempotency
+  if (eventId) {
+    await WebhookEvent.create({
+      eventId,
+      eventType: type,
+      source: 'revenuecat',
+      payload: webhookPayload,
+    });
+  }
 }
 
 /**
@@ -87,17 +106,26 @@ export async function processWebhookEvent(webhookPayload) {
  */
 async function handleSubscriptionActivated(user, event) {
   try {
-    const hasProEntitlement = checkHasProEntitlement(event.entitlements);
+    const proEntitlement = getProEntitlement(event.entitlements);
 
-    if (hasProEntitlement) {
-      await user.update({
+    if (proEntitlement) {
+      const updateData = {
         tier: 'pro',
-      });
+      };
 
-      console.log(`User ${user.id} upgraded to Pro tier`);
+      // Store expiration date if available
+      if (proEntitlement.expires_date) {
+        updateData.subscriptionExpiresAt = new Date(proEntitlement.expires_date);
+      }
 
-      // TODO: Enviar notificación de bienvenida Pro
-      // TODO: Sincronizar con analytics (Mixpanel, etc.)
+      // Store product ID if available
+      if (proEntitlement.product_identifier) {
+        updateData.subscriptionProductId = proEntitlement.product_identifier;
+      }
+
+      await user.update(updateData);
+
+      console.log(`User ${user.id} upgraded to Pro tier (expires: ${proEntitlement.expires_date || 'never'})`);
     }
   } catch (error) {
     console.error(`Error activating subscription for user ${user.id}:`, error);
@@ -119,12 +147,11 @@ async function handleSubscriptionDeactivated(user, event) {
     if (!hasProEntitlement) {
       await user.update({
         tier: 'free',
+        subscriptionExpiresAt: null,
+        subscriptionProductId: null,
       });
 
       console.log(`User ${user.id} downgraded to Free tier`);
-
-      // TODO: Enviar notificación de downgrade
-      // TODO: Limpiar datos Pro si es necesario
     }
   } catch (error) {
     console.error(`Error deactivating subscription for user ${user.id}:`, error);
@@ -161,12 +188,35 @@ async function handleProductChange(user, event) {
  */
 async function handleSubscriptionIssue(user, event) {
   try {
-    // En grace period, mantener Pro temporalmente
-    // RevenueCat maneja el grace period automáticamente
     console.log(`User ${user.id} has subscription issue: ${event.type}`);
 
-    // TODO: Enviar notificación de problema de pago
-    // TODO: Implementar lógica de grace period si es necesario
+    // Check for grace period - keep user as Pro during grace period
+    const proEntitlement = getProEntitlement(event.entitlements);
+
+    if (proEntitlement && proEntitlement.grace_period_expires_date) {
+      const gracePeriodExpires = new Date(proEntitlement.grace_period_expires_date);
+
+      if (gracePeriodExpires > new Date()) {
+        // Still in grace period - keep Pro status but update expiration
+        await user.update({
+          tier: 'pro',
+          subscriptionExpiresAt: gracePeriodExpires,
+        });
+        console.log(`User ${user.id} in grace period until ${gracePeriodExpires.toISOString()}`);
+        return;
+      }
+    }
+
+    // Grace period ended or not available - check if still has active entitlement
+    const hasProEntitlement = checkHasProEntitlement(event.entitlements);
+    if (!hasProEntitlement) {
+      await user.update({
+        tier: 'free',
+        subscriptionExpiresAt: null,
+        subscriptionProductId: null,
+      });
+      console.log(`User ${user.id} downgraded after billing issue (no grace period)`);
+    }
   } catch (error) {
     console.error(`Error handling subscription issue for user ${user.id}:`, error);
   }
@@ -186,13 +236,13 @@ async function handleSubscriberAlias(user, event) {
 }
 
 /**
- * Verifica si el usuario tiene entitlement Pro activo
+ * Gets the pro entitlement object if it exists and is active
  * @param {object} entitlements - Entitlements de RevenueCat
- * @returns {boolean} - True si tiene Pro activo
+ * @returns {object|null} - The pro entitlement object or null
  */
-function checkHasProEntitlement(entitlements) {
+function getProEntitlement(entitlements) {
   if (!entitlements || !entitlements.pro) {
-    return false;
+    return null;
   }
 
   const proEntitlement = entitlements.pro;
@@ -201,7 +251,16 @@ function checkHasProEntitlement(entitlements) {
   const isActive = proEntitlement.expires_date === null ||
     new Date(proEntitlement.expires_date) > new Date();
 
-  return isActive;
+  return isActive ? proEntitlement : null;
+}
+
+/**
+ * Verifica si el usuario tiene entitlement Pro activo
+ * @param {object} entitlements - Entitlements de RevenueCat
+ * @returns {boolean} - True si tiene Pro activo
+ */
+function checkHasProEntitlement(entitlements) {
+  return getProEntitlement(entitlements) !== null;
 }
 
 /**
@@ -219,13 +278,18 @@ export async function getUserSubscriptionStatus(userId) {
       });
     }
 
-    // Para ahora, retornar el tier desde la DB
-    // En el futuro podrías consultar RevenueCat directamente
+    const isPro = user.tier === 'pro';
+    const expiresAt = user.subscriptionExpiresAt;
+    const isExpired = expiresAt && new Date(expiresAt) < new Date();
+
     return {
       userId: user.id,
       tier: user.tier,
-      isActive: user.tier === 'pro',
-      // TODO: Agregar fecha de expiración, producto, etc.
+      isPro,
+      isActive: isPro && !isExpired,
+      expiresAt: expiresAt ? expiresAt.toISOString() : null,
+      productId: user.subscriptionProductId,
+      isExpired,
     };
   } catch (error) {
     console.error(`Error getting subscription status for user ${userId}:`, error);

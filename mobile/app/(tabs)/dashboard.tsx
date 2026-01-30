@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import { FlatList, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
+import { Zap, PenTool, Briefcase, CheckSquare, ChevronRight } from 'lucide-react-native';
 
 import { useRouter } from 'expo-router';
 
-import { COLORS, RADIUS, SPACING } from '../../constants/theme';
+import { COLORS, RADIUS, SPACING, SHADOWS, MINIMAL_CARD } from '../../constants/theme';
 import AppHeader from '../components/AppHeader';
 import CheckinCard from '../components/CheckinCard';
 import EmptyState from '../components/EmptyState';
@@ -13,9 +14,15 @@ import ProjectCard from '../components/ProjectCard';
 import Screen from '../components/Screen';
 import SectionHeading from '../components/SectionHeading';
 import { ProjectCardSkeleton, CheckinCardSkeleton } from '../components/SkeletonLoaderSimple';
-import { api, isMockApi } from '../services/api';
-import { Checkin, Project } from '../types/models';
+import { api, isMockApi } from '../../src/services/api';
+import { Checkin, Project } from '../../src/types/models';
 
+/**
+ * Minimalist Dashboard
+ * - Clean, airy layout
+ * - Subtle shadows
+ * - Generous whitespace
+ */
 export default function DashboardScreen() {
   const router = useRouter();
 
@@ -63,31 +70,47 @@ export default function DashboardScreen() {
   const quickActions = [
     {
       title: 'Plan con IA',
-      description: 'Describe tu idea y recibe fases + tareas.',
+      description: 'Describe tu idea y recibe un plan estructurado',
       onPress: () => router.push('/project/ai'),
-      accent: 'rgba(155,109,255,0.25)',
+      icon: Zap,
+      iconBg: `${COLORS.primary}15`,
+      iconColor: COLORS.primary,
     },
     {
       title: 'Crear manual',
-      description: 'Define título, fecha y comienza con foco.',
+      description: 'Define tu proyecto paso a paso',
       onPress: () => router.push('/project/manual'),
-      accent: 'rgba(255,157,77,0.18)',
+      icon: PenTool,
+      iconBg: `${COLORS.secondary}20`,
+      iconColor: COLORS.secondary,
     },
   ];
 
-  const renderQuickAction = (action: typeof quickActions[0]) => (
-    <View key={action.title} style={[styles.quickCard, { backgroundColor: action.accent }]}>
-      <Text variant="titleMedium">{action.title}</Text>
-      <Text style={styles.quickDescription}>{action.description}</Text>
-      <Text style={styles.quickLink} onPress={action.onPress}>
-        Comenzar →
-      </Text>
-    </View>
-  );
+  const renderQuickAction = (action: typeof quickActions[0]) => {
+    const Icon = action.icon;
+    return (
+      <Pressable
+        key={action.title}
+        onPress={action.onPress}
+        style={({ pressed }) => [
+          styles.quickCard,
+          pressed && styles.quickCardPressed,
+        ]}
+      >
+        <View style={[styles.quickIconWrapper, { backgroundColor: action.iconBg }]}>
+          <Icon size={20} color={action.iconColor} />
+        </View>
+        <View style={styles.quickContent}>
+          <Text style={styles.quickTitle}>{action.title}</Text>
+          <Text style={styles.quickDescription}>{action.description}</Text>
+        </View>
+        <ChevronRight size={20} color={COLORS.textLight} />
+      </Pressable>
+    );
+  };
 
   const renderProject = ({ item }: { item: Project }) => (
     <ProjectCard
-      key={item.id}
       project={item}
       onPress={() => router.push(`/project/${item.id}`)}
     />
@@ -96,60 +119,89 @@ export default function DashboardScreen() {
   return (
     <Screen padded={false}>
       <ScrollView
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={COLORS.primary}
+          />
+        }
         contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
       >
         <AppHeader onPrimaryAction={() => router.push('/project/new')} />
 
-        {error ? <Text style={styles.error}>{error}</Text> : null}
+        {error && (
+          <View style={styles.errorBanner}>
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        )}
 
+        {/* Stats row */}
         <View style={styles.statsRow}>
-          <HighlightCard label="Activos" value={`${stats.active}`} />
-          <HighlightCard label="Completados" value={`${stats.completed}`} accent="rgba(255,157,77,0.25)" />
+          <HighlightCard
+            label="Activos"
+            value={`${stats.active}`}
+            icon={<Briefcase size={18} color={COLORS.primary} />}
+            accent={COLORS.primary}
+          />
+          <HighlightCard
+            label="Completados"
+            value={`${stats.completed}`}
+            icon={<CheckSquare size={18} color={COLORS.secondary} />}
+            accent={COLORS.secondary}
+          />
         </View>
 
-        <SectionHeading title="Acciones rápidas" subtitle="Lo que necesitas a un toque" />
-        <View style={styles.quickActionsColumn}>{quickActions.map(renderQuickAction)}</View>
+        {/* Quick actions */}
+        <SectionHeading title="Crear proyecto" />
+        <View style={styles.quickActionsColumn}>
+          {quickActions.map(renderQuickAction)}
+        </View>
 
+        {/* Pending checkins */}
         {loading && !pendingCheckins.length ? (
           <>
-            <SectionHeading title="Check-ins pendientes" subtitle="Responde para mantener tu ritmo" />
+            <SectionHeading title="Check-ins pendientes" />
             <CheckinCardSkeleton />
           </>
-        ) : pendingCheckins.length ? (
+        ) : pendingCheckins.length > 0 && (
           <>
-            <SectionHeading title="Check-ins pendientes" subtitle="Responde para mantener tu ritmo" />
+            <SectionHeading
+              title="Check-ins pendientes"
+              actionLabel="Ver todos"
+              onActionPress={() => router.push('/(tabs)/checkins')}
+            />
             <CheckinCard
               checkin={pendingCheckins[0]}
               onRespond={() => router.push('/(tabs)/checkins')}
             />
           </>
-        ) : null}
+        )}
 
+        {/* Projects */}
         <SectionHeading
-          title="Proyectos activos"
-          subtitle={`${projects.length} en marcha${isMockApi ? ' · Modo demo' : ''}`}
+          title="Tus proyectos"
+          subtitle={isMockApi ? 'Modo demo' : undefined}
           actionLabel="Ver todos"
           onActionPress={() => router.push('/project/new')}
         />
         {loading ? (
-          <View style={styles.projectsList}>
-            <ProjectCardSkeleton />
+          <View>
             <ProjectCardSkeleton />
             <ProjectCardSkeleton />
           </View>
-        ) : projects.length ? (
+        ) : projects.length > 0 ? (
           <FlatList
             data={projects}
             renderItem={renderProject}
             keyExtractor={(item) => item.id}
             scrollEnabled={false}
-            contentContainerStyle={styles.projectsList}
           />
         ) : (
           <EmptyState
             title="Aún no tienes proyectos"
-            description="Crea uno manual o deja que la IA diseñe el plan por ti."
+            description="Crea tu primer proyecto con ayuda de IA o de forma manual"
             ctaLabel="Crear proyecto"
             onCtaPress={() => router.push('/project/new')}
           />
@@ -161,36 +213,58 @@ export default function DashboardScreen() {
 
 const styles = StyleSheet.create({
   scrollContent: {
-    padding: SPACING(2),
-    gap: SPACING(2),
+    paddingHorizontal: SPACING(2.5),
+    paddingBottom: SPACING(4),
   },
-  error: {
+  errorBanner: {
+    backgroundColor: `${COLORS.danger}15`,
+    padding: SPACING(2),
+    borderRadius: RADIUS.md,
+    marginBottom: SPACING(2),
+  },
+  errorText: {
     color: COLORS.danger,
+    fontSize: 14,
+    fontWeight: '500',
   },
   statsRow: {
     flexDirection: 'row',
     gap: SPACING(2),
+    marginBottom: SPACING(3),
   },
   quickActionsColumn: {
-    marginBottom: SPACING(2),
     gap: SPACING(1.5),
+    marginBottom: SPACING(3),
   },
   quickCard: {
-    width: '100%',
-    borderRadius: RADIUS.lg,
+    ...MINIMAL_CARD,
+    flexDirection: 'row',
+    alignItems: 'center',
     padding: SPACING(2),
-    gap: SPACING(1),
-    borderWidth: 1,
-    borderColor: COLORS.border,
+    gap: SPACING(1.5),
   },
-  quickDescription: {
+  quickCardPressed: {
+    opacity: 0.95,
+    transform: [{ scale: 0.995 }],
+  },
+  quickIconWrapper: {
+    width: 44,
+    height: 44,
+    borderRadius: RADIUS.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  quickContent: {
+    flex: 1,
+  },
+  quickTitle: {
     color: COLORS.text,
-  },
-  quickLink: {
-    color: COLORS.primary,
+    fontSize: 16,
     fontWeight: '600',
   },
-  projectsList: {
-    gap: SPACING(2),
+  quickDescription: {
+    color: COLORS.textMuted,
+    fontSize: 13,
+    marginTop: 2,
   },
 });

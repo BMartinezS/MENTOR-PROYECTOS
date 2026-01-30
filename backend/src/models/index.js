@@ -8,6 +8,7 @@ import Checkin from './Checkin.js';
 import ProgressLog from './ProgressLog.js';
 import WeeklyReview from './WeeklyReview.js';
 import PlanIteration from './PlanIteration.js';
+import WebhookEvent from './WebhookEvent.js';
 
 User.hasMany(Project, { foreignKey: 'userId' });
 Project.belongsTo(User, { foreignKey: 'userId' });
@@ -59,4 +60,5 @@ export {
   Checkin,
   WeeklyReview,
   PlanIteration,
+  WebhookEvent,
 };

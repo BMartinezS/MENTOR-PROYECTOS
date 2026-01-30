@@ -3,7 +3,7 @@ import { ActivityIndicator } from 'react-native';
 import { Redirect } from 'expo-router';
 
 import Screen from './components/Screen';
-import { useAuth } from './contexts/AuthContext';
+import { useAuth } from '../src/contexts/AuthContext';
 
 export default function Index() {
   const { token, loading } = useAuth();

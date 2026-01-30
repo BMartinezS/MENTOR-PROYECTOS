@@ -2,7 +2,7 @@ import { ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
 
-import { COLORS, RADIUS, SHADOWS, SPACING } from '../../constants/theme';
+import { COLORS, RADIUS, SPACING, MINIMAL_CARD } from '../../constants/theme';
 
 type Props = {
   label: string;
@@ -11,13 +11,20 @@ type Props = {
   accent?: string;
 };
 
+/**
+ * Minimalist HighlightCard
+ * - Clean stat display
+ * - Subtle accent color
+ */
 export default function HighlightCard({ label, value, icon, accent }: Props) {
+  const accentColor = accent ?? COLORS.primary;
+
   return (
-    <View style={[styles.card, { borderColor: accent ?? COLORS.primaryLight }]}> 
-      <View style={styles.icon}>{icon}</View>
-      <Text variant="headlineSmall" style={styles.value}>
-        {value}
-      </Text>
+    <View style={styles.card}>
+      <View style={[styles.iconWrapper, { backgroundColor: `${accentColor}15` }]}>
+        {icon}
+      </View>
+      <Text style={styles.value}>{value}</Text>
       <Text style={styles.label}>{label}</Text>
     </View>
   );
@@ -26,22 +33,28 @@ export default function HighlightCard({ label, value, icon, accent }: Props) {
 const styles = StyleSheet.create({
   card: {
     flex: 1,
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.lg,
+    ...MINIMAL_CARD,
     padding: SPACING(2),
-    borderWidth: 1,
-    ...SHADOWS.card,
-    minWidth: 160,
+    minWidth: 140,
   },
-  icon: {
-    alignSelf: 'flex-start',
-    marginBottom: SPACING(1),
+  iconWrapper: {
+    width: 40,
+    height: 40,
+    borderRadius: RADIUS.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: SPACING(1.5),
   },
   value: {
     color: COLORS.text,
+    fontSize: 28,
+    fontWeight: '700',
+    letterSpacing: -0.5,
   },
   label: {
     color: COLORS.textMuted,
+    fontSize: 13,
+    fontWeight: '500',
+    marginTop: SPACING(0.25),
   },
 });
-

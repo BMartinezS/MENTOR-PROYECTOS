@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, Animated } from 'react-native';
-import { COLORS, RADIUS, SPACING } from '../../constants/theme';
-import { useShimmerAnimation } from '../utils/animationsSimple';
+import { COLORS, RADIUS, SPACING, MINIMAL_CARD } from '../../constants/theme';
+import { useShimmerAnimation } from '../../src/utils/animationsSimple';
 
 interface SkeletonProps {
   width?: number | string;
@@ -10,7 +10,11 @@ interface SkeletonProps {
   style?: any;
 }
 
-// Base skeleton component with shimmer animation
+/**
+ * Minimalist Skeleton loader
+ * - Soft shimmer effect
+ * - Rounded corners
+ */
 function Skeleton({ width = '100%', height = 20, borderRadius = RADIUS.sm, style }: SkeletonProps) {
   const shimmerStyle = useShimmerAnimation();
 
@@ -30,60 +34,46 @@ function Skeleton({ width = '100%', height = 20, borderRadius = RADIUS.sm, style
   );
 }
 
-// Project card skeleton
 export function ProjectCardSkeleton() {
   return (
     <View style={styles.card}>
       <View style={styles.header}>
         <View style={styles.titleRow}>
-          <Skeleton width={20} height={20} borderRadius={10} />
-          <Skeleton width="60%" height={20} />
-          <Skeleton width={60} height={24} borderRadius={12} />
-        </View>
-        <View style={styles.metaRow}>
-          <Skeleton width={16} height={16} borderRadius={8} />
-          <Skeleton width="40%" height={16} />
+          <Skeleton width={40} height={40} borderRadius={RADIUS.md} />
+          <View style={styles.titleContent}>
+            <Skeleton width="70%" height={18} />
+            <Skeleton width="40%" height={14} style={{ marginTop: 6 }} />
+          </View>
         </View>
       </View>
 
-      <Skeleton width="100%" height={16} style={{ marginBottom: SPACING(1) }} />
-      <Skeleton width="80%" height={16} style={{ marginBottom: SPACING(1) }} />
+      <Skeleton width="100%" height={14} style={{ marginBottom: SPACING(1) }} />
+      <Skeleton width="80%" height={14} style={{ marginBottom: SPACING(2) }} />
 
-      <View style={styles.progressRow}>
-        <View style={styles.progressLabel}>
-          <Skeleton width={16} height={16} borderRadius={8} />
-          <Skeleton width={60} height={16} />
-        </View>
-        <Skeleton width={40} height={16} />
+      <View style={styles.progressSection}>
+        <Skeleton width="100%" height={6} borderRadius={RADIUS.full} />
       </View>
 
-      <Skeleton width="100%" height={8} borderRadius={4} style={{ marginVertical: SPACING(1) }} />
-
-      <View style={styles.linkRow}>
-        <Skeleton width="50%" height={16} />
-        <Skeleton width={16} height={16} borderRadius={8} />
+      <View style={styles.statsRow}>
+        <Skeleton width={80} height={14} />
+        <Skeleton width={80} height={14} />
       </View>
     </View>
   );
 }
 
-// Checkin card skeleton
 export function CheckinCardSkeleton() {
   return (
-    <View style={[styles.card, styles.checkinCard]}>
+    <View style={styles.card}>
       <View style={styles.checkinHeader}>
-        <View style={styles.projectRow}>
-          <Skeleton width={16} height={16} borderRadius={8} />
-          <Skeleton width="40%" height={14} />
-        </View>
-        <Skeleton width={20} height={20} borderRadius={10} />
+        <Skeleton width={120} height={14} />
       </View>
 
       <View style={styles.messageRow}>
-        <Skeleton width={20} height={20} borderRadius={10} />
+        <Skeleton width={36} height={36} borderRadius={RADIUS.md} />
         <View style={styles.messageContent}>
-          <Skeleton width="100%" height={18} style={{ marginBottom: SPACING(0.5) }} />
-          <Skeleton width="70%" height={18} />
+          <Skeleton width="100%" height={16} style={{ marginBottom: SPACING(0.5) }} />
+          <Skeleton width="70%" height={16} />
         </View>
       </View>
 
@@ -95,30 +85,22 @@ export function CheckinCardSkeleton() {
   );
 }
 
-// Simple list skeleton for multiple items
 interface SkeletonListProps {
   count?: number;
-  itemHeight?: number;
-  spacing?: number;
   renderItem?: (index: number) => React.ReactNode;
 }
 
-export function SkeletonList({
-  count = 5,
-  itemHeight = 60,
-  spacing = SPACING(1),
-  renderItem
-}: SkeletonListProps) {
+export function SkeletonList({ count = 5, renderItem }: SkeletonListProps) {
   return (
-    <View style={{ gap: spacing }}>
+    <View style={{ gap: SPACING(2) }}>
       {Array.from({ length: count }).map((_, index) => (
         <View key={index}>
           {renderItem ? renderItem(index) : (
             <View style={styles.listItem}>
-              <Skeleton width={40} height={40} borderRadius={20} />
+              <Skeleton width={44} height={44} borderRadius={RADIUS.full} />
               <View style={styles.listContent}>
-                <Skeleton width="70%" height={16} style={{ marginBottom: SPACING(0.5) }} />
-                <Skeleton width="50%" height={14} />
+                <Skeleton width="70%" height={16} />
+                <Skeleton width="50%" height={14} style={{ marginTop: 6 }} />
               </View>
             </View>
           )}
@@ -130,65 +112,39 @@ export function SkeletonList({
 
 const styles = StyleSheet.create({
   skeleton: {
-    backgroundColor: COLORS.surfaceMuted,
+    backgroundColor: COLORS.backgroundAlt,
   },
   card: {
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.lg,
-    padding: SPACING(2),
+    ...MINIMAL_CARD,
+    padding: SPACING(2.5),
     marginBottom: SPACING(2),
-    borderWidth: 1,
-    borderColor: COLORS.borderSubtle,
-    gap: SPACING(1),
   },
   header: {
-    gap: SPACING(1),
+    marginBottom: SPACING(2),
   },
   titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING(1),
+    gap: SPACING(1.5),
   },
-  metaRow: {
+  titleContent: {
+    flex: 1,
+  },
+  progressSection: {
+    marginBottom: SPACING(2),
+  },
+  statsRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING(0.5),
-  },
-  progressRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: SPACING(1),
-  },
-  progressLabel: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING(0.5),
-  },
-  linkRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: SPACING(1),
-  },
-  checkinCard: {
-    borderLeftWidth: 4,
-    borderLeftColor: COLORS.secondary,
+    gap: SPACING(3),
   },
   checkinHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  projectRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING(0.5),
+    marginBottom: SPACING(1.5),
   },
   messageRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: SPACING(1),
+    gap: SPACING(1.5),
+    marginBottom: SPACING(2.5),
   },
   messageContent: {
     flex: 1,
@@ -196,7 +152,6 @@ const styles = StyleSheet.create({
   actionsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: SPACING(1),
   },
   listItem: {
     flexDirection: 'row',
@@ -204,7 +159,7 @@ const styles = StyleSheet.create({
     gap: SPACING(2),
     padding: SPACING(2),
     backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.md,
+    borderRadius: RADIUS.lg,
   },
   listContent: {
     flex: 1,

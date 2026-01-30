@@ -10,8 +10,8 @@ import {
 } from '../services/purchaseService';
 import { useAuth } from './AuthContext';
 
-// RevenueCat API Key - en producción debería venir de variables de entorno
-const REVENUECAT_API_KEY = 'appl_YOUR_API_KEY_HERE'; // TODO: Configurar API key real
+// RevenueCat API Key from environment variables
+const REVENUECAT_API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_API_KEY || 'test_key';
 
 type PurchaseContextValue = {
   // Estado de suscripción

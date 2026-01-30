@@ -6,7 +6,7 @@ import { StyleSheet, View, Pressable } from 'react-native';
 import { Button, Text, Card } from 'react-native-paper';
 
 import { COLORS, GRADIENTS, RADIUS, SHADOWS, SPACING, TYPOGRAPHY } from '../../constants/theme';
-import { usePurchase } from '../contexts/PurchaseContext';
+import { usePurchase } from '../../src/contexts/PurchaseContext';
 
 interface ProUpgradePromptProps {
   /** Feature that requires Pro */

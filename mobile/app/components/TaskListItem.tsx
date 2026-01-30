@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Chip, Text } from 'react-native-paper';
 
 import { COLORS, SPACING } from '../../constants/theme';
-import { Task } from '../types/models';
+import { Task } from '../../src/types/models';
 
 type Props = {
   task: Task;

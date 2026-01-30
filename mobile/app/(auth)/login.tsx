@@ -1,13 +1,19 @@
 import { useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
-import { Button, HelperText, Text, TextInput } from 'react-native-paper';
+import { ScrollView, StyleSheet, View, Pressable, TextInput as RNTextInput } from 'react-native';
+import { Text } from 'react-native-paper';
 
 import { Link } from 'expo-router';
 
-import { COLORS, RADIUS, SPACING } from '../../constants/theme';
+import { COLORS, RADIUS, SPACING, SHADOWS, MINIMAL_CARD, MINIMAL_INPUT } from '../../constants/theme';
 import Screen from '../components/Screen';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../../src/contexts/AuthContext';
 
+/**
+ * Minimalist Login Screen
+ * - Clean, focused design
+ * - Soft shadows
+ * - Generous whitespace
+ */
 export default function LoginScreen() {
   const { login } = useAuth();
 
@@ -30,43 +36,74 @@ export default function LoginScreen() {
 
   return (
     <Screen padded={false}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Hero section */}
         <View style={styles.hero}>
-          <Text style={styles.badge}>Mentor Proyectos</Text>
-          <Text variant="displaySmall" style={styles.heroTitle}>
-            Bienvenido de vuelta 🧠
+          <View style={styles.logoWrapper}>
+            <Text style={styles.logoText}>M</Text>
+          </View>
+          <Text style={styles.heroTitle}>Bienvenido de vuelta</Text>
+          <Text style={styles.heroSubtitle}>
+            Continúa donde lo dejaste
           </Text>
-          <Text style={styles.heroSubtitle}>Continúa donde lo dejaste.</Text>
         </View>
 
+        {/* Login card */}
         <View style={styles.card}>
-          <Text variant="titleLarge">Iniciar sesión</Text>
-          <Text style={styles.cardSubtitle}>Accede a tus proyectos y check-ins.</Text>
+          {/* Email input */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>Email</Text>
+            <RNTextInput
+              placeholder="tu@email.com"
+              autoCapitalize="none"
+              keyboardType="email-address"
+              value={email}
+              onChangeText={setEmail}
+              style={styles.input}
+              placeholderTextColor={COLORS.textLight}
+            />
+          </View>
 
-          <TextInput
-            label="Email"
-            autoCapitalize="none"
-            keyboardType="email-address"
-            value={email}
-            onChangeText={setEmail}
-            style={styles.input}
-          />
-          <TextInput
-            label="Contraseña"
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword}
-            style={styles.input}
-          />
+          {/* Password input */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>Contraseña</Text>
+            <RNTextInput
+              placeholder="••••••••"
+              secureTextEntry
+              value={password}
+              onChangeText={setPassword}
+              style={styles.input}
+              placeholderTextColor={COLORS.textLight}
+            />
+          </View>
 
-          {error ? <HelperText type="error">{error}</HelperText> : null}
+          {error && (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          )}
 
-          <Button mode="contained" onPress={onSubmit} loading={submitting} disabled={submitting}>
-            Entrar
-          </Button>
+          {/* Submit button */}
+          <Pressable
+            onPress={onSubmit}
+            disabled={submitting}
+            style={({ pressed }) => [
+              styles.submitButton,
+              pressed && styles.submitButtonPressed,
+              submitting && styles.submitButtonDisabled,
+            ]}
+          >
+            <Text style={styles.submitButtonText}>
+              {submitting ? 'Entrando...' : 'Entrar'}
+            </Text>
+          </Pressable>
 
+          {/* Footer */}
           <View style={styles.footer}>
-            <Text style={styles.secondary}>¿No tienes cuenta?</Text>
+            <Text style={styles.footerText}>¿No tienes cuenta?</Text>
             <Link href="/(auth)/register" style={styles.link}>
               Crear cuenta
             </Link>
@@ -79,45 +116,103 @@ export default function LoginScreen() {
 
 const styles = StyleSheet.create({
   scrollContent: {
-    padding: SPACING(3),
-    gap: SPACING(2),
+    paddingHorizontal: SPACING(3),
+    paddingVertical: SPACING(4),
   },
   hero: {
-    gap: SPACING(1),
-    marginTop: SPACING(2),
+    alignItems: 'center',
+    marginBottom: SPACING(4),
+    marginTop: SPACING(4),
   },
-  badge: {
-    color: COLORS.primary,
-    fontWeight: '600',
+  logoWrapper: {
+    width: 64,
+    height: 64,
+    borderRadius: RADIUS.lg,
+    backgroundColor: COLORS.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: SPACING(2),
+    ...SHADOWS.lg,
+  },
+  logoText: {
+    color: '#FFFFFF',
+    fontSize: 28,
+    fontWeight: '700',
   },
   heroTitle: {
     color: COLORS.text,
+    fontSize: 28,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: SPACING(0.5),
   },
   heroSubtitle: {
     color: COLORS.textMuted,
+    fontSize: 16,
+    textAlign: 'center',
   },
   card: {
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.lg,
+    ...MINIMAL_CARD,
     padding: SPACING(3),
-    gap: SPACING(1),
+    gap: SPACING(2.5),
   },
-  cardSubtitle: {
-    color: COLORS.textMuted,
+  inputGroup: {
+    gap: SPACING(0.75),
+  },
+  inputLabel: {
+    color: COLORS.text,
+    fontSize: 14,
+    fontWeight: '500',
   },
   input: {
-    backgroundColor: COLORS.surface,
+    ...MINIMAL_INPUT,
+    paddingVertical: SPACING(1.75),
+    paddingHorizontal: SPACING(2),
+    fontSize: 16,
+    color: COLORS.text,
+  },
+  errorContainer: {
+    backgroundColor: `${COLORS.danger}10`,
+    padding: SPACING(1.5),
+    borderRadius: RADIUS.md,
+  },
+  errorText: {
+    color: COLORS.danger,
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  submitButton: {
+    backgroundColor: COLORS.primary,
+    paddingVertical: SPACING(2),
+    borderRadius: RADIUS.md,
+    alignItems: 'center',
+    ...SHADOWS.sm,
+  },
+  submitButtonPressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.99 }],
+  },
+  submitButtonDisabled: {
+    opacity: 0.7,
+  },
+  submitButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
   footer: {
     flexDirection: 'row',
-    gap: SPACING(1),
+    gap: SPACING(0.75),
+    justifyContent: 'center',
     marginTop: SPACING(1),
   },
-  secondary: {
+  footerText: {
     color: COLORS.textMuted,
+    fontSize: 14,
   },
   link: {
     color: COLORS.primary,
     fontWeight: '600',
+    fontSize: 14,
   },
 });

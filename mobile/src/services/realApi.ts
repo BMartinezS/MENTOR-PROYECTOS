@@ -22,7 +22,7 @@ import {
   UpdatePhaseRequest,
   WeeklyReview,
   WeeklyReviewAnswersRequest,
-} from '../types/models';
+} from './models';
 
 function getErrorMessage(error: unknown) {
   if (typeof error === 'object' && error && 'response' in error) {

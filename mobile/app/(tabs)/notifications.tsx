@@ -1,13 +1,34 @@
 import { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, View, Alert } from 'react-native';
-import { Text, Switch, Button, Card, Chip, ActivityIndicator } from 'react-native-paper';
-import { Bell, BellOff, Settings, Smartphone, CheckCircle, AlertTriangle } from 'lucide-react-native';
+import { ScrollView, StyleSheet, View, Alert, Pressable, Switch } from 'react-native';
+import { Text } from 'react-native-paper';
+import {
+  Bell,
+  BellOff,
+  BellRing,
+  Settings,
+  Smartphone,
+  CheckCircle,
+  AlertTriangle,
+  Calendar,
+  TrendingUp,
+  Clock,
+  Users,
+  Target,
+  Send,
+  RefreshCw,
+  XCircle,
+} from 'lucide-react-native';
 
-import { COLORS, SPACING, RADIUS } from '../../constants/theme';
+import { COLORS, SPACING, RADIUS, SHADOWS, MINIMAL_CARD } from '../../constants/theme';
 import Screen from '../components/Screen';
-import SectionHeading from '../components/SectionHeading';
-import { useNotifications } from '../contexts/NotificationContext';
+import { useNotifications } from '../../src/contexts/NotificationContext';
 
+/**
+ * Minimalist Notifications Screen
+ * - Clean status indicators
+ * - Subtle preference toggles
+ * - Soft shadows and rounded corners
+ */
 export default function NotificationsScreen() {
   const {
     isInitialized,
@@ -44,31 +65,31 @@ export default function NotificationsScreen() {
     try {
       const granted = await requestPermissions();
       if (granted) {
-        Alert.alert('✅ Permisos concedidos', 'Las notificaciones están habilitadas.');
+        Alert.alert('Permisos concedidos', 'Las notificaciones están habilitadas.');
       } else {
         Alert.alert(
-          '❌ Permisos denegados',
-          'No podrás recibir notificaciones. Puedes habilitarlas desde la configuración del sistema.'
+          'Permisos denegados',
+          'No podrás recibir notificaciones. Habilítalas desde configuración del sistema.'
         );
       }
     } catch (error) {
-      Alert.alert('Error', 'No se pudieron solicitar permisos de notificación.');
+      Alert.alert('Error', 'No se pudieron solicitar permisos.');
     }
   };
 
   const handleRegisterDevice = async () => {
     try {
       await registerDevice();
-      Alert.alert('✅ Dispositivo registrado', 'Ahora recibirás notificaciones push.');
+      Alert.alert('Dispositivo registrado', 'Ahora recibirás notificaciones push.');
     } catch (error) {
-      Alert.alert('Error', 'No se pudo registrar el dispositivo para notificaciones.');
+      Alert.alert('Error', 'No se pudo registrar el dispositivo.');
     }
   };
 
   const handleUnregisterDevice = () => {
     Alert.alert(
-      '⚠️ Desactivar notificaciones',
-      'Dejarás de recibir todas las notificaciones push. ¿Estás seguro?',
+      'Desactivar notificaciones',
+      '¿Dejarás de recibir todas las notificaciones. ¿Estás seguro?',
       [
         { text: 'Cancelar', style: 'cancel' },
         {
@@ -77,9 +98,9 @@ export default function NotificationsScreen() {
           onPress: async () => {
             try {
               await unregisterDevice();
-              Alert.alert('✅ Notificaciones desactivadas', 'Ya no recibirás notificaciones push.');
+              Alert.alert('Notificaciones desactivadas', 'Ya no recibirás notificaciones push.');
             } catch (error) {
-              Alert.alert('Error', 'No se pudieron desactivar las notificaciones.');
+              Alert.alert('Error', 'No se pudieron desactivar.');
             }
           },
         },
@@ -96,7 +117,6 @@ export default function NotificationsScreen() {
     try {
       await updatePreferences({ [key]: value });
     } catch (error) {
-      // Revert local change on error
       setLocalPreferences(localPreferences);
       Alert.alert('Error', 'No se pudo actualizar la preferencia.');
     }
@@ -105,116 +125,138 @@ export default function NotificationsScreen() {
   const handleTestNotification = async () => {
     try {
       await sendTestNotification();
-      Alert.alert('🧪 Notificación de prueba enviada', 'Deberías recibirla en unos momentos.');
+      Alert.alert('Notificación enviada', 'Deberías recibirla en unos momentos.');
     } catch (error) {
       Alert.alert('Error', 'No se pudo enviar la notificación de prueba.');
     }
   };
 
-  const getStatusIcon = () => {
-    if (!hasPermissions) return <BellOff size={20} color={COLORS.danger} />;
-    if (!isRegistered) return <AlertTriangle size={20} color={COLORS.warning} />;
-    return <CheckCircle size={20} color={COLORS.success} />;
+  const getStatusConfig = () => {
+    if (!hasPermissions) {
+      return {
+        icon: BellOff,
+        text: 'Sin permisos',
+        color: COLORS.danger,
+        bgColor: `${COLORS.danger}15`,
+      };
+    }
+    if (!isRegistered) {
+      return {
+        icon: AlertTriangle,
+        text: 'No registrado',
+        color: COLORS.warning,
+        bgColor: `${COLORS.warning}15`,
+      };
+    }
+    return {
+      icon: CheckCircle,
+      text: 'Activo',
+      color: COLORS.secondary,
+      bgColor: `${COLORS.secondary}15`,
+    };
   };
 
-  const getStatusText = () => {
-    if (!hasPermissions) return 'Sin permisos';
-    if (!isRegistered) return 'No registrado';
-    return 'Activo';
-  };
-
-  const getStatusColor = () => {
-    if (!hasPermissions) return COLORS.danger;
-    if (!isRegistered) return COLORS.warning;
-    return COLORS.success;
-  };
+  const statusConfig = getStatusConfig();
+  const StatusIcon = statusConfig.icon;
 
   if (loading.initializing) {
     return (
       <Screen>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
-          <Text style={styles.loadingText}>Inicializando notificaciones...</Text>
+          <View style={styles.loadingIconWrapper}>
+            <Bell size={28} color={COLORS.primary} />
+          </View>
+          <Text style={styles.loadingText}>Inicializando...</Text>
         </View>
       </Screen>
     );
   }
 
   return (
-    <Screen>
-      <ScrollView contentContainerStyle={styles.container}>
+    <Screen padded={false}>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Header */}
         <View style={styles.header}>
-          <Bell size={32} color={COLORS.primary} />
-          <Text variant="headlineSmall" style={styles.title}>
-            Notificaciones
-          </Text>
-          <Text style={styles.subtitle}>
-            Configura cuándo y cómo quieres que te recordemos
-          </Text>
+          <Text style={styles.headerTitle}>Alertas</Text>
+          <Text style={styles.headerSubtitle}>Configura cuándo y cómo te recordamos</Text>
         </View>
 
         {/* Status Card */}
-        <Card style={styles.statusCard}>
-          <Card.Content style={styles.statusContent}>
-            <View style={styles.statusRow}>
-              {getStatusIcon()}
-              <View style={styles.statusInfo}>
-                <Text style={styles.statusTitle}>Estado de notificaciones</Text>
-                <Chip
-                  style={[styles.statusChip, { backgroundColor: getStatusColor() + '20' }]}
-                  textStyle={{ color: getStatusColor(), fontWeight: '600' }}
-                >
-                  {getStatusText()}
-                </Chip>
+        <View style={styles.statusCard}>
+          <View style={styles.statusHeader}>
+            <View style={[styles.statusIconWrapper, { backgroundColor: statusConfig.bgColor }]}>
+              <StatusIcon size={22} color={statusConfig.color} />
+            </View>
+            <View style={styles.statusInfo}>
+              <Text style={styles.statusLabel}>Estado</Text>
+              <Text style={[styles.statusText, { color: statusConfig.color }]}>{statusConfig.text}</Text>
+            </View>
+          </View>
+
+          {/* Stats */}
+          {stats && (
+            <View style={styles.statsGrid}>
+              <View style={styles.statCard}>
+                <Target size={18} color={COLORS.primary} />
+                <Text style={styles.statValue}>{stats.activeProjects}</Text>
+                <Text style={styles.statLabel}>Proyectos</Text>
+              </View>
+              <View style={styles.statCard}>
+                <AlertTriangle size={18} color={COLORS.danger} />
+                <Text style={styles.statValue}>{stats.urgentTasks}</Text>
+                <Text style={styles.statLabel}>Urgentes</Text>
+              </View>
+              <View style={styles.statCard}>
+                <Clock size={18} color={COLORS.secondary} />
+                <Text style={styles.statValue}>{stats.nextReminderTime || '--'}</Text>
+                <Text style={styles.statLabel}>Próximo</Text>
               </View>
             </View>
+          )}
+        </View>
 
-            {stats && (
-              <View style={styles.statsRow}>
-                <View style={styles.statItem}>
-                  <Text style={styles.statValue}>{stats.activeProjects}</Text>
-                  <Text style={styles.statLabel}>Proyectos activos</Text>
-                </View>
-                <View style={styles.statItem}>
-                  <Text style={styles.statValue}>{stats.urgentTasks}</Text>
-                  <Text style={styles.statLabel}>Tareas urgentes</Text>
-                </View>
-                <View style={styles.statItem}>
-                  <Text style={styles.statValue}>{stats.nextReminderTime}</Text>
-                  <Text style={styles.statLabel}>Próximo recordatorio</Text>
-                </View>
-              </View>
-            )}
-          </Card.Content>
-        </Card>
-
-        {/* Setup Section */}
+        {/* Setup Section (if not configured) */}
         {(!hasPermissions || !isRegistered) && (
-          <View style={styles.section}>
-            <SectionHeading title="Configuración inicial" subtitle="Activa las notificaciones" />
+          <View style={styles.setupCard}>
+            <View style={styles.setupHeader}>
+              <View style={styles.setupIconWrapper}>
+                <Settings size={18} color={COLORS.primary} />
+              </View>
+              <Text style={styles.setupTitle}>Configuración inicial</Text>
+            </View>
+            <Text style={styles.setupText}>
+              Activa las notificaciones para recibir recordatorios de tus proyectos.
+            </Text>
 
             {!hasPermissions && (
-              <Button
-                mode="contained"
+              <Pressable
                 onPress={handlePermissionRequest}
-                style={styles.actionButton}
-                icon={({ size, color }) => <Settings size={size} color={color} />}
+                style={({ pressed }) => [
+                  styles.setupButton,
+                  pressed && styles.setupButtonPressed,
+                ]}
               >
-                Solicitar permisos
-              </Button>
+                <Bell size={18} color="#FFFFFF" />
+                <Text style={styles.setupButtonText}>Solicitar permisos</Text>
+              </Pressable>
             )}
 
             {hasPermissions && !isRegistered && (
-              <Button
-                mode="contained"
+              <Pressable
                 onPress={handleRegisterDevice}
-                loading={loading.registering}
-                style={styles.actionButton}
-                icon={({ size, color }) => <Smartphone size={size} color={color} />}
+                disabled={loading.registering}
+                style={({ pressed }) => [
+                  styles.setupButton,
+                  { backgroundColor: COLORS.secondary },
+                  pressed && styles.setupButtonPressed,
+                  loading.registering && styles.buttonDisabled,
+                ]}
               >
-                Registrar dispositivo
-              </Button>
+                <Smartphone size={18} color="#FFFFFF" />
+                <Text style={styles.setupButtonText}>
+                  {loading.registering ? 'Registrando...' : 'Registrar dispositivo'}
+                </Text>
+              </Pressable>
             )}
           </View>
         )}
@@ -222,131 +264,115 @@ export default function NotificationsScreen() {
         {/* Preferences Section */}
         {isRegistered && localPreferences && (
           <View style={styles.section}>
-            <SectionHeading title="Preferencias" subtitle="Personaliza tus notificaciones" />
+            <Text style={styles.sectionTitle}>Preferencias</Text>
 
-            <View style={styles.preferencesList}>
-              <View style={styles.preferenceItem}>
-                <View style={styles.preferenceInfo}>
-                  <Text style={styles.preferenceTitle}>Recordatorios diarios</Text>
-                  <Text style={styles.preferenceDescription}>
-                    Recordatorio cada mañana sobre tareas pendientes
-                  </Text>
-                </View>
-                <Switch
-                  value={localPreferences.dailyReminders}
-                  onValueChange={(value) => handlePreferenceChange('dailyReminders', value)}
-                  disabled={loading.updating}
-                />
-              </View>
+            <PreferenceToggle
+              icon={BellRing}
+              iconColor={COLORS.primary}
+              title="Recordatorios diarios"
+              description="Recordatorio cada mañana sobre tareas pendientes"
+              value={localPreferences.dailyReminders}
+              onValueChange={(value) => handlePreferenceChange('dailyReminders', value)}
+              disabled={loading.updating}
+            />
 
-              <View style={styles.preferenceItem}>
-                <View style={styles.preferenceInfo}>
-                  <Text style={styles.preferenceTitle}>Recordatorios de progreso</Text>
-                  <Text style={styles.preferenceDescription}>
-                    Te avisamos si no has avanzado en tus proyectos
-                  </Text>
-                </View>
-                <Switch
-                  value={localPreferences.progressReminders}
-                  onValueChange={(value) => handlePreferenceChange('progressReminders', value)}
-                  disabled={loading.updating}
-                />
-              </View>
+            <PreferenceToggle
+              icon={TrendingUp}
+              iconColor={COLORS.secondary}
+              title="Recordatorios de progreso"
+              description="Te avisamos si no has avanzado en tus proyectos"
+              value={localPreferences.progressReminders}
+              onValueChange={(value) => handlePreferenceChange('progressReminders', value)}
+              disabled={loading.updating}
+            />
 
-              <View style={styles.preferenceItem}>
-                <View style={styles.preferenceInfo}>
-                  <Text style={styles.preferenceTitle}>Revisión semanal</Text>
-                  <Text style={styles.preferenceDescription}>
-                    Resumen de tu productividad cada domingo
-                  </Text>
-                </View>
-                <Switch
-                  value={localPreferences.weeklyReview}
-                  onValueChange={(value) => handlePreferenceChange('weeklyReview', value)}
-                  disabled={loading.updating}
-                />
-              </View>
+            <PreferenceToggle
+              icon={Calendar}
+              iconColor={COLORS.tertiary}
+              title="Revisión semanal"
+              description="Resumen de tu productividad cada domingo"
+              value={localPreferences.weeklyReview}
+              onValueChange={(value) => handlePreferenceChange('weeklyReview', value)}
+              disabled={loading.updating}
+            />
 
-              <View style={styles.preferenceItem}>
-                <View style={styles.preferenceInfo}>
-                  <Text style={styles.preferenceTitle}>Alertas de deadlines</Text>
-                  <Text style={styles.preferenceDescription}>
-                    Notificaciones urgentes para fechas límite
-                  </Text>
-                </View>
-                <Switch
-                  value={localPreferences.deadlineAlerts}
-                  onValueChange={(value) => handlePreferenceChange('deadlineAlerts', value)}
-                  disabled={loading.updating}
-                />
-              </View>
+            <PreferenceToggle
+              icon={AlertTriangle}
+              iconColor={COLORS.danger}
+              title="Alertas de deadlines"
+              description="Notificaciones urgentes para fechas límite"
+              value={localPreferences.deadlineAlerts}
+              onValueChange={(value) => handlePreferenceChange('deadlineAlerts', value)}
+              disabled={loading.updating}
+            />
 
-              <View style={styles.preferenceItem}>
-                <View style={styles.preferenceInfo}>
-                  <Text style={styles.preferenceTitle}>Notificaciones de equipo</Text>
-                  <Text style={styles.preferenceDescription}>
-                    Invitaciones a proyectos y colaboraciones
-                  </Text>
-                </View>
-                <Switch
-                  value={localPreferences.teamNotifications}
-                  onValueChange={(value) => handlePreferenceChange('teamNotifications', value)}
-                  disabled={loading.updating}
-                />
-              </View>
-            </View>
+            <PreferenceToggle
+              icon={Users}
+              iconColor="#A06CD5"
+              title="Notificaciones de equipo"
+              description="Invitaciones a proyectos y colaboraciones"
+              value={localPreferences.teamNotifications}
+              onValueChange={(value) => handlePreferenceChange('teamNotifications', value)}
+              disabled={loading.updating}
+            />
           </View>
         )}
 
         {/* Actions Section */}
         {isRegistered && (
           <View style={styles.section}>
-            <SectionHeading title="Acciones" subtitle="Pruebas y configuración" />
+            <Text style={styles.sectionTitle}>Acciones</Text>
 
             <View style={styles.actionsRow}>
-              <Button
-                mode="outlined"
+              <Pressable
                 onPress={handleTestNotification}
-                style={styles.actionButton}
-                icon={({ size, color }) => <Bell size={size} color={color} />}
+                style={({ pressed }) => [
+                  styles.actionButton,
+                  pressed && styles.actionButtonPressed,
+                ]}
               >
-                Prueba
-              </Button>
+                <Send size={18} color={COLORS.primary} />
+                <Text style={styles.actionButtonText}>Probar</Text>
+              </Pressable>
 
-              <Button
-                mode="outlined"
+              <Pressable
                 onPress={refreshStats}
-                loading={loading.refreshing}
-                style={styles.actionButton}
-                icon={({ size, color }) => <Settings size={size} color={color} />}
+                disabled={loading.refreshing}
+                style={({ pressed }) => [
+                  styles.actionButton,
+                  pressed && styles.actionButtonPressed,
+                  loading.refreshing && styles.buttonDisabled,
+                ]}
               >
-                Actualizar
-              </Button>
+                <RefreshCw size={18} color={COLORS.primary} />
+                <Text style={styles.actionButtonText}>
+                  {loading.refreshing ? '...' : 'Actualizar'}
+                </Text>
+              </Pressable>
             </View>
 
-            <Button
-              mode="text"
+            <Pressable
               onPress={handleUnregisterDevice}
-              style={styles.dangerButton}
-              textColor={COLORS.danger}
+              style={({ pressed }) => [
+                styles.disableButton,
+                pressed && styles.disableButtonPressed,
+              ]}
             >
-              Desactivar notificaciones
-            </Button>
+              <XCircle size={18} color={COLORS.danger} />
+              <Text style={styles.disableButtonText}>Desactivar notificaciones</Text>
+            </Pressable>
           </View>
         )}
 
         {/* Debug Info */}
         {__DEV__ && pushToken && (
-          <View style={styles.debugSection}>
-            <Text style={styles.debugTitle}>Debug Info</Text>
-            <Text style={styles.debugText} numberOfLines={3}>
+          <View style={styles.debugCard}>
+            <Text style={styles.debugTitle}>Debug info</Text>
+            <Text style={styles.debugText} numberOfLines={2}>
               Token: {pushToken}
             </Text>
             <Text style={styles.debugText}>
-              Registrado: {isRegistered ? 'Sí' : 'No'}
-            </Text>
-            <Text style={styles.debugText}>
-              Permisos: {hasPermissions ? 'Sí' : 'No'}
+              Registrado: {isRegistered ? 'Sí' : 'No'} | Permisos: {hasPermissions ? 'Sí' : 'No'}
             </Text>
           </View>
         )}
@@ -355,10 +381,55 @@ export default function NotificationsScreen() {
   );
 }
 
+/**
+ * Preference toggle component with minimalist styling
+ */
+interface PreferenceToggleProps {
+  icon: any;
+  iconColor: string;
+  title: string;
+  description: string;
+  value: boolean;
+  onValueChange: (value: boolean) => void;
+  disabled?: boolean;
+}
+
+function PreferenceToggle({
+  icon: Icon,
+  iconColor,
+  title,
+  description,
+  value,
+  onValueChange,
+  disabled,
+}: PreferenceToggleProps) {
+  return (
+    <View style={styles.preferenceItem}>
+      <View style={[styles.preferenceIcon, { backgroundColor: `${iconColor}15` }]}>
+        <Icon size={18} color={iconColor} />
+      </View>
+      <View style={styles.preferenceInfo}>
+        <Text style={styles.preferenceTitle}>{title}</Text>
+        <Text style={styles.preferenceDescription}>{description}</Text>
+      </View>
+      <Switch
+        value={value}
+        onValueChange={onValueChange}
+        disabled={disabled}
+        trackColor={{ false: COLORS.backgroundAlt, true: `${COLORS.secondary}60` }}
+        thumbColor={value ? COLORS.secondary : COLORS.surface}
+        ios_backgroundColor={COLORS.backgroundAlt}
+      />
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
-  container: {
-    padding: SPACING(2),
-    gap: SPACING(3),
+  scrollContent: {
+    paddingHorizontal: SPACING(2.5),
+    paddingVertical: SPACING(3),
+    gap: SPACING(2.5),
+    paddingBottom: SPACING(4),
   },
   loadingContainer: {
     flex: 1,
@@ -366,120 +437,251 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: SPACING(2),
   },
+  loadingIconWrapper: {
+    width: 72,
+    height: 72,
+    borderRadius: RADIUS.xl,
+    backgroundColor: `${COLORS.primary}10`,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   loadingText: {
     color: COLORS.textMuted,
+    fontSize: 15,
+    fontWeight: '500',
   },
+
+  // Header
   header: {
-    alignItems: 'center',
-    gap: SPACING(1),
-    marginBottom: SPACING(2),
+    marginBottom: SPACING(0.5),
   },
-  title: {
-    color: COLORS.text,
+  headerTitle: {
+    fontSize: 28,
     fontWeight: '700',
+    color: COLORS.text,
   },
-  subtitle: {
+  headerSubtitle: {
+    fontSize: 14,
     color: COLORS.textMuted,
-    textAlign: 'center',
+    fontWeight: '500',
+    marginTop: SPACING(0.5),
   },
+
+  // Status Card
   statusCard: {
-    backgroundColor: COLORS.surfaceGlass,
-    borderRadius: RADIUS.lg,
+    ...MINIMAL_CARD,
+    padding: SPACING(2.5),
+    gap: SPACING(2.5),
   },
-  statusContent: {
-    gap: SPACING(2),
-  },
-  statusRow: {
+  statusHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING(1.5),
   },
+  statusIconWrapper: {
+    width: 48,
+    height: 48,
+    borderRadius: RADIUS.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   statusInfo: {
     flex: 1,
-    gap: SPACING(0.5),
   },
-  statusTitle: {
-    color: COLORS.text,
-    fontWeight: '600',
+  statusLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: COLORS.textMuted,
   },
-  statusChip: {
-    alignSelf: 'flex-start',
+  statusText: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginTop: 2,
   },
-  statsRow: {
+  statsGrid: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingTop: SPACING(1),
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
+    gap: SPACING(1.5),
   },
-  statItem: {
+  statCard: {
+    flex: 1,
+    backgroundColor: COLORS.backgroundAlt,
+    borderRadius: RADIUS.lg,
+    padding: SPACING(2),
     alignItems: 'center',
     gap: SPACING(0.5),
   },
   statValue: {
-    color: COLORS.text,
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '700',
+    color: COLORS.text,
   },
   statLabel: {
+    fontSize: 11,
+    fontWeight: '500',
     color: COLORS.textMuted,
-    fontSize: 12,
-    textAlign: 'center',
   },
-  section: {
-    gap: SPACING(1.5),
-  },
-  actionButton: {
-    borderRadius: RADIUS.md,
-  },
-  preferencesList: {
+
+  // Setup Card
+  setupCard: {
+    backgroundColor: `${COLORS.primary}08`,
+    borderRadius: RADIUS.xl,
+    padding: SPACING(2.5),
     gap: SPACING(2),
   },
+  setupHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING(1),
+  },
+  setupIconWrapper: {
+    width: 32,
+    height: 32,
+    borderRadius: RADIUS.md,
+    backgroundColor: `${COLORS.primary}15`,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  setupTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.text,
+  },
+  setupText: {
+    fontSize: 14,
+    color: COLORS.textMuted,
+    fontWeight: '500',
+    lineHeight: 20,
+  },
+  setupButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING(1),
+    backgroundColor: COLORS.primary,
+    borderRadius: RADIUS.md,
+    paddingVertical: SPACING(1.75),
+    ...SHADOWS.sm,
+  },
+  setupButtonPressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.99 }],
+  },
+  setupButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
+
+  // Section
+  section: {
+    ...MINIMAL_CARD,
+    padding: 0,
+    overflow: 'hidden',
+  },
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.textMuted,
+    padding: SPACING(2.5),
+    paddingBottom: SPACING(1.5),
+  },
+
+  // Preference Item
   preferenceItem: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: SPACING(1),
-    paddingHorizontal: SPACING(1.5),
-    backgroundColor: COLORS.surface,
+    paddingHorizontal: SPACING(2.5),
+    paddingVertical: SPACING(2),
+    gap: SPACING(1.5),
+    borderTopWidth: 1,
+    borderTopColor: COLORS.borderLight,
+  },
+  preferenceIcon: {
+    width: 40,
+    height: 40,
     borderRadius: RADIUS.md,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   preferenceInfo: {
     flex: 1,
-    gap: SPACING(0.5),
-    marginRight: SPACING(2),
   },
   preferenceTitle: {
-    color: COLORS.text,
+    fontSize: 15,
     fontWeight: '600',
+    color: COLORS.text,
   },
   preferenceDescription: {
+    fontSize: 13,
     color: COLORS.textMuted,
-    fontSize: 12,
+    fontWeight: '400',
+    marginTop: 2,
   },
+
+  // Actions
   actionsRow: {
     flexDirection: 'row',
     gap: SPACING(1.5),
+    padding: SPACING(2.5),
   },
-  dangerButton: {
-    marginTop: SPACING(1),
-  },
-  debugSection: {
-    marginTop: SPACING(2),
-    padding: SPACING(1.5),
-    backgroundColor: COLORS.surface,
+  actionButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING(0.75),
+    backgroundColor: `${COLORS.primary}10`,
     borderRadius: RADIUS.md,
+    paddingVertical: SPACING(1.5),
+  },
+  actionButtonPressed: {
+    opacity: 0.8,
+  },
+  actionButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.primary,
+  },
+  disableButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING(1),
+    paddingVertical: SPACING(2),
+    marginHorizontal: SPACING(2.5),
+    marginBottom: SPACING(2.5),
+    borderTopWidth: 1,
+    borderTopColor: COLORS.borderLight,
+  },
+  disableButtonPressed: {
+    opacity: 0.7,
+  },
+  disableButtonText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: COLORS.danger,
+  },
+
+  // Debug Card
+  debugCard: {
+    backgroundColor: COLORS.backgroundAlt,
+    borderRadius: RADIUS.md,
+    padding: SPACING(2),
+    gap: SPACING(0.5),
     opacity: 0.7,
   },
   debugTitle: {
-    color: COLORS.textMuted,
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
-    marginBottom: SPACING(0.5),
+    color: COLORS.textMuted,
   },
   debugText: {
-    color: COLORS.textMuted,
     fontSize: 11,
+    color: COLORS.textMuted,
+    fontWeight: '400',
     fontFamily: 'monospace',
   },
 });

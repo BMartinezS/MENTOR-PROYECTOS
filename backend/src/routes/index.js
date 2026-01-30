@@ -8,6 +8,7 @@ import weeklyReviewRoutes from './weekly-reviews.js';
 import planIterationRoutes from './plan-iterations.js';
 import notificationRoutes from './notifications.js';
 import webhookRoutes from './webhooks.js';
+import subscriptionRoutes from './subscription.js';
 
 const router = express.Router();
 
@@ -19,5 +20,6 @@ router.use('/checkins', checkinRoutes);
 router.use('/weekly-reviews', weeklyReviewRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/webhooks', webhookRoutes);
+router.use('/subscription', subscriptionRoutes);
 
 export default router;

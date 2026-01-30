@@ -2,7 +2,7 @@ import { Stack } from 'expo-router';
 
 import { Redirect } from 'expo-router';
 
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../../src/contexts/AuthContext';
 
 export default function AuthLayout() {
   const { token } = useAuth();

@@ -32,6 +32,14 @@ const User = sequelize.define(
       type: DataTypes.ENUM('free', 'pro'),
       defaultValue: 'free',
     },
+    subscriptionExpiresAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    subscriptionProductId: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
     preferences: {
       type: DataTypes.JSONB,
       defaultValue: {},

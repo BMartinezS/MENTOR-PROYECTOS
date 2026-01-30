@@ -1,9 +1,15 @@
 import { Redirect, Tabs } from 'expo-router';
 import { LayoutDashboard, CheckCircle2, User, Bell } from 'lucide-react-native';
 
-import { useAuth } from '../contexts/AuthContext';
-import { COLORS } from '../../constants/theme';
+import { useAuth } from '../../src/contexts/AuthContext';
+import { COLORS, RADIUS } from '../../constants/theme';
 
+/**
+ * Minimalist Tab Layout
+ * - Clean, subtle tab bar
+ * - Soft shadows
+ * - Rounded active indicator
+ */
 export default function TabsLayout() {
   const { token, loading } = useAuth();
 
@@ -19,33 +25,33 @@ export default function TabsLayout() {
         tabBarInactiveTintColor: COLORS.textMuted,
         tabBarStyle: {
           backgroundColor: COLORS.surface,
-          borderTopColor: COLORS.border,
+          borderTopColor: COLORS.borderLight,
           borderTopWidth: 1,
-          height: 80,
-          paddingBottom: 20,
-          paddingTop: 12,
-          elevation: 20,
+          height: 85,
+          paddingBottom: 25,
+          paddingTop: 10,
+          elevation: 0,
           shadowColor: COLORS.shadow,
-          shadowOffset: { width: 0, height: -4 },
-          shadowOpacity: 0.3,
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.05,
           shadowRadius: 8,
         },
         tabBarLabelStyle: {
           fontSize: 11,
-          fontWeight: '600',
-          letterSpacing: 0.3,
+          fontWeight: '500',
+          marginTop: 4,
         },
         tabBarIconStyle: {
           marginTop: 2,
-        }
+        },
       }}
     >
       <Tabs.Screen
         name="dashboard"
         options={{
-          title: 'Dashboard',
+          title: 'Inicio',
           tabBarIcon: ({ color, size }) => (
-            <LayoutDashboard size={size} color={color} />
+            <LayoutDashboard size={22} color={color} />
           ),
         }}
       />
@@ -54,16 +60,16 @@ export default function TabsLayout() {
         options={{
           title: 'Check-ins',
           tabBarIcon: ({ color, size }) => (
-            <CheckCircle2 size={size} color={color} />
+            <CheckCircle2 size={22} color={color} />
           ),
         }}
       />
       <Tabs.Screen
         name="notifications"
         options={{
-          title: 'Notificaciones',
+          title: 'Alertas',
           tabBarIcon: ({ color, size }) => (
-            <Bell size={size} color={color} />
+            <Bell size={22} color={color} />
           ),
         }}
       />
@@ -72,11 +78,10 @@ export default function TabsLayout() {
         options={{
           title: 'Perfil',
           tabBarIcon: ({ color, size }) => (
-            <User size={size} color={color} />
+            <User size={22} color={color} />
           ),
         }}
       />
     </Tabs>
   );
 }
-

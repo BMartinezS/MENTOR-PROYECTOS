@@ -1,14 +1,13 @@
 import { useRouter } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Check, Crown, Star, X, Zap } from 'lucide-react-native';
-import React, { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, View, Dimensions, Alert } from 'react-native';
-import { Button, Text, ActivityIndicator } from 'react-native-paper';
+import React, { useState } from 'react';
+import { ScrollView, StyleSheet, View, Dimensions, Pressable } from 'react-native';
+import { Text, ActivityIndicator } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PurchasesPackage } from 'react-native-purchases';
 
-import { COLORS, GRADIENTS, RADIUS, SHADOWS, SPACING, TYPOGRAPHY } from '../constants/theme';
-import { usePurchase } from './contexts/PurchaseContext';
+import { COLORS, RADIUS, SHADOWS, SPACING, BORDERS, BRUTALIST_CARD, BRUTALIST_BUTTON } from '../constants/theme';
+import { usePurchase } from '../src/contexts/PurchaseContext';
 
 const { width } = Dimensions.get('window');
 
@@ -16,9 +15,9 @@ const { width } = Dimensions.get('window');
 const FREE_FEATURES = [
   '1 proyecto activo',
   '2 check-ins por semana',
-  '1 iteración de plan con IA',
+  '1 iteracion de plan con IA',
   'Ver tareas (sin editar)',
-  'Notificaciones básicas',
+  'Notificaciones basicas',
 ];
 
 const PRO_FEATURES = [
@@ -28,7 +27,7 @@ const PRO_FEATURES = [
   'Editar tareas y fases',
   'Revisiones semanales detalladas',
   'Analytics de progreso',
-  'Configuración personalizada',
+  'Configuracion personalizada',
   'Soporte prioritario',
 ];
 
@@ -39,65 +38,59 @@ interface PackageCardProps {
   loading?: boolean;
 }
 
+/**
+ * Neo-Brutalist Package Card
+ */
 function PackageCard({ purchasePackage, isPopular = false, onPress, loading = false }: PackageCardProps) {
-  const period = purchasePackage.packageType === 'ANNUAL' ? 'año' : 'mes';
+  const period = purchasePackage.packageType === 'ANNUAL' ? 'ano' : 'mes';
   const price = purchasePackage.product.priceString;
 
-  // Calcular descuento para plan anual
-  const monthlyPrice = purchasePackage.packageType === 'ANNUAL'
-    ? purchasePackage.product.price / 12
-    : purchasePackage.product.price;
   const savings = purchasePackage.packageType === 'ANNUAL'
-    ? `Ahorras ${((12 * 12 - purchasePackage.product.price) / 12).toFixed(0)}% vs mensual`
+    ? `Ahorras vs mensual`
     : null;
 
   return (
-    <View style={[styles.packageCard, isPopular && styles.popularCard]}>
+    <Pressable
+      onPress={onPress}
+      disabled={loading}
+      style={({ pressed }) => [
+        styles.packageCard,
+        isPopular && styles.popularCard,
+        pressed && styles.packageCardPressed,
+      ]}
+    >
       {isPopular && (
         <View style={styles.popularBadge}>
-          <Crown size={16} color={COLORS.background} />
-          <Text style={styles.popularBadgeText}>MÁS POPULAR</Text>
+          <Crown size={14} color={COLORS.text} />
+          <Text style={styles.popularBadgeText}>MAS POPULAR</Text>
         </View>
       )}
 
-      <LinearGradient
-        colors={isPopular ? GRADIENTS.cardHover : GRADIENTS.card}
-        style={styles.packageGradient}
-      />
+      <Text style={styles.packageTitle}>
+        {period === 'ano' ? 'PRO ANUAL' : 'PRO MENSUAL'}
+      </Text>
 
-      <View style={styles.packageContent}>
-        <View style={styles.packageHeader}>
-          <Text style={[styles.packageTitle, isPopular && { color: COLORS.secondary }]}>
-            {period === 'año' ? 'Pro Anual' : 'Pro Mensual'}
-          </Text>
-          <View style={styles.priceContainer}>
-            <Text style={styles.price}>{price}</Text>
-            <Text style={styles.pricePeriod}>/{period}</Text>
-          </View>
-          {savings && (
-            <Text style={styles.savings}>{savings}</Text>
-          )}
-        </View>
-
-        <Button
-          mode="contained"
-          onPress={onPress}
-          loading={loading}
-          disabled={loading}
-          style={[
-            styles.packageButton,
-            isPopular && styles.popularButton,
-            { backgroundColor: isPopular ? COLORS.secondary : COLORS.primary }
-          ]}
-          labelStyle={[
-            styles.packageButtonLabel,
-            { color: isPopular ? COLORS.background : COLORS.background }
-          ]}
-        >
-          {loading ? 'Procesando...' : 'Suscribirse'}
-        </Button>
+      <View style={styles.priceContainer}>
+        <Text style={styles.price}>{price}</Text>
+        <Text style={styles.pricePeriod}>/{period}</Text>
       </View>
-    </View>
+
+      {savings && (
+        <View style={styles.savingsBadge}>
+          <Text style={styles.savingsText}>{savings}</Text>
+        </View>
+      )}
+
+      <View style={[
+        styles.packageButton,
+        isPopular && styles.popularButton,
+        loading && styles.packageButtonDisabled,
+      ]}>
+        <Text style={styles.packageButtonText}>
+          {loading ? 'PROCESANDO...' : 'SUSCRIBIRSE'}
+        </Text>
+      </View>
+    </Pressable>
   );
 }
 
@@ -111,18 +104,22 @@ function FeatureItem({ feature, isPro = false }: FeatureItemProps) {
     <View style={styles.featureItem}>
       <View style={[styles.featureIcon, isPro && styles.featureIconPro]}>
         {isPro ? (
-          <Star size={16} color={COLORS.secondary} fill={COLORS.secondary} />
+          <Star size={14} color={COLORS.text} fill={COLORS.secondary} />
         ) : (
-          <Check size={16} color={COLORS.primary} />
+          <Check size={14} color={COLORS.text} />
         )}
       </View>
-      <Text style={[styles.featureText, isPro && styles.featureTextPro]}>
-        {feature}
-      </Text>
+      <Text style={styles.featureText}>{feature}</Text>
     </View>
   );
 }
 
+/**
+ * Neo-Brutalist Paywall Screen
+ * - Bold, direct design
+ * - No gradients, thick borders
+ * - High contrast for clarity
+ */
 export default function PaywallScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -141,7 +138,6 @@ export default function PaywallScreen() {
     const result = await purchasePackage(pkg);
 
     if (result.success) {
-      // Redirect to dashboard after successful purchase
       router.replace('/(tabs)/dashboard');
     }
     setSelectedPackage(null);
@@ -158,17 +154,15 @@ export default function PaywallScreen() {
     router.back();
   };
 
-  // Get packages from offerings
   const monthlyPackage = offerings?.current?.monthly;
   const annualPackage = offerings?.current?.annual;
 
   if (purchaseLoading || !offerings) {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
-        <LinearGradient colors={GRADIENTS.background} style={styles.background} />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={COLORS.primary} />
-          <Text style={styles.loadingText}>Cargando planes...</Text>
+          <Text style={styles.loadingText}>CARGANDO PLANES...</Text>
         </View>
       </View>
     );
@@ -176,34 +170,28 @@ export default function PaywallScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <LinearGradient colors={GRADIENTS.background} style={styles.background} />
-
       {/* Header with close button */}
       <View style={styles.header}>
-        <Button
-          onPress={handleClose}
-          style={styles.closeButton}
-          contentStyle={styles.closeButtonContent}
-        >
-          <X size={24} color={COLORS.text} />
-        </Button>
+        <Pressable onPress={handleClose} style={styles.closeButton}>
+          <X size={24} color={COLORS.text} strokeWidth={3} />
+        </Pressable>
       </View>
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* Hero section */}
         <View style={styles.heroSection}>
           <View style={styles.heroIcon}>
-            <Zap size={48} color={COLORS.secondary} fill={COLORS.secondary} />
+            <Zap size={40} color={COLORS.text} fill={COLORS.secondary} />
           </View>
           <Text style={styles.heroTitle}>Desbloquea tu potencial</Text>
           <Text style={styles.heroSubtitle}>
-            Lleva tus proyectos al siguiente nivel con funciones Pro diseñadas para emprendedores ambiciosos
+            Funciones Pro disenadas para emprendedores ambiciosos
           </Text>
         </View>
 
         {/* Pricing packages */}
         <View style={styles.packagesSection}>
-          <Text style={styles.sectionTitle}>Elige tu plan</Text>
+          <Text style={styles.sectionTitle}>ELIGE TU PLAN</Text>
           <View style={styles.packages}>
             {monthlyPackage && (
               <PackageCard
@@ -225,12 +213,12 @@ export default function PaywallScreen() {
 
         {/* Features comparison */}
         <View style={styles.featuresSection}>
-          <Text style={styles.sectionTitle}>¿Qué obtienes con Pro?</Text>
+          <Text style={styles.sectionTitle}>QUE OBTIENES CON PRO?</Text>
 
           <View style={styles.featuresGrid}>
             {/* Free features */}
             <View style={styles.featureColumn}>
-              <Text style={styles.featureColumnTitle}>Plan Gratuito</Text>
+              <Text style={styles.featureColumnTitle}>GRATUITO</Text>
               {FREE_FEATURES.map((feature, index) => (
                 <FeatureItem key={index} feature={feature} />
               ))}
@@ -239,7 +227,7 @@ export default function PaywallScreen() {
             {/* Pro features */}
             <View style={[styles.featureColumn, styles.proColumn]}>
               <Text style={[styles.featureColumnTitle, styles.proColumnTitle]}>
-                Plan Pro ⭐
+                PRO
               </Text>
               {PRO_FEATURES.map((feature, index) => (
                 <FeatureItem key={index} feature={feature} isPro />
@@ -250,18 +238,13 @@ export default function PaywallScreen() {
 
         {/* Restore purchases button */}
         <View style={styles.footer}>
-          <Button
-            mode="text"
-            onPress={handleRestore}
-            style={styles.restoreButton}
-            labelStyle={styles.restoreButtonLabel}
-          >
-            Restaurar compras
-          </Button>
+          <Pressable onPress={handleRestore} style={styles.restoreButton}>
+            <Text style={styles.restoreButtonText}>RESTAURAR COMPRAS</Text>
+          </Pressable>
 
           <Text style={styles.termsText}>
-            Al suscribirte, aceptas nuestros Términos de Servicio y Política de Privacidad.
-            Puedes cancelar en cualquier momento desde la configuración de tu dispositivo.
+            Al suscribirte, aceptas nuestros Terminos de Servicio y Politica de Privacidad.
+            Puedes cancelar en cualquier momento.
           </Text>
         </View>
       </ScrollView>
@@ -272,13 +255,7 @@ export default function PaywallScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  background: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
+    backgroundColor: COLORS.background,
   },
   header: {
     flexDirection: 'row',
@@ -287,12 +264,15 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING(1),
   },
   closeButton: {
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    width: 44,
+    height: 44,
+    backgroundColor: COLORS.surface,
+    borderWidth: BORDERS.medium,
+    borderColor: COLORS.border,
     borderRadius: RADIUS.sm,
-  },
-  closeButtonContent: {
-    paddingHorizontal: SPACING(1),
-    paddingVertical: SPACING(0.5),
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...SHADOWS.sm,
   },
   scrollView: {
     flex: 1,
@@ -304,8 +284,10 @@ const styles = StyleSheet.create({
     gap: SPACING(2),
   },
   loadingText: {
-    ...TYPOGRAPHY.body,
     color: COLORS.textMuted,
+    fontSize: 14,
+    fontWeight: '800',
+    letterSpacing: 1,
   },
 
   // Hero section
@@ -317,22 +299,27 @@ const styles = StyleSheet.create({
   heroIcon: {
     width: 80,
     height: 80,
-    borderRadius: 40,
-    backgroundColor: `${COLORS.secondary}20`,
+    borderRadius: RADIUS.md,
+    backgroundColor: COLORS.secondary,
+    borderWidth: BORDERS.thick,
+    borderColor: COLORS.border,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: SPACING(2),
-    ...SHADOWS.glow,
+    ...SHADOWS.card,
   },
   heroTitle: {
-    ...TYPOGRAPHY.display,
     color: COLORS.text,
+    fontSize: 32,
+    fontWeight: '900',
     textAlign: 'center',
+    letterSpacing: -1,
     marginBottom: SPACING(1),
   },
   heroSubtitle: {
-    ...TYPOGRAPHY.body,
     color: COLORS.textMuted,
+    fontSize: 16,
+    fontWeight: '500',
     textAlign: 'center',
     lineHeight: 24,
   },
@@ -343,8 +330,10 @@ const styles = StyleSheet.create({
     marginBottom: SPACING(4),
   },
   sectionTitle: {
-    ...TYPOGRAPHY.headline,
     color: COLORS.text,
+    fontSize: 14,
+    fontWeight: '900',
+    letterSpacing: 1,
     textAlign: 'center',
     marginBottom: SPACING(3),
   },
@@ -352,92 +341,92 @@ const styles = StyleSheet.create({
     gap: SPACING(2),
   },
   packageCard: {
-    position: 'relative',
-    borderRadius: RADIUS.lg,
-    overflow: 'hidden',
-    ...SHADOWS.card,
+    ...BRUTALIST_CARD,
+    padding: SPACING(3),
+    alignItems: 'center',
+  },
+  packageCardPressed: {
+    ...SHADOWS.pressed,
+    transform: [{ translateX: 2 }, { translateY: 2 }],
   },
   popularCard: {
-    borderWidth: 2,
+    borderWidth: BORDERS.thick,
     borderColor: COLORS.secondary,
-    ...SHADOWS.premium,
   },
   popularBadge: {
     position: 'absolute',
-    top: -1,
-    left: width * 0.25,
-    right: width * 0.25,
-    backgroundColor: COLORS.secondary,
-    paddingVertical: SPACING(0.5),
-    paddingHorizontal: SPACING(1),
-    borderBottomLeftRadius: RADIUS.sm,
-    borderBottomRightRadius: RADIUS.sm,
+    top: -14,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
     gap: SPACING(0.5),
-    zIndex: 1,
+    backgroundColor: COLORS.secondary,
+    paddingVertical: SPACING(0.5),
+    paddingHorizontal: SPACING(1.5),
+    borderRadius: RADIUS.xs,
+    borderWidth: BORDERS.thin,
+    borderColor: COLORS.border,
   },
   popularBadgeText: {
-    ...TYPOGRAPHY.caption,
-    color: COLORS.background,
-    fontWeight: '700',
+    color: COLORS.text,
     fontSize: 10,
-  },
-  packageGradient: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
-  packageContent: {
-    padding: SPACING(3),
-  },
-  packageHeader: {
-    alignItems: 'center',
-    marginBottom: SPACING(2),
+    fontWeight: '900',
+    letterSpacing: 0.5,
   },
   packageTitle: {
-    ...TYPOGRAPHY.title,
     color: COLORS.text,
+    fontSize: 18,
+    fontWeight: '900',
+    letterSpacing: 0.5,
     marginBottom: SPACING(1),
   },
   priceContainer: {
     flexDirection: 'row',
     alignItems: 'baseline',
-    marginBottom: SPACING(0.5),
+    marginBottom: SPACING(1),
   },
   price: {
-    ...TYPOGRAPHY.display,
-    fontSize: 36,
     color: COLORS.primary,
-    fontWeight: '800',
+    fontSize: 40,
+    fontWeight: '900',
+    letterSpacing: -1,
   },
   pricePeriod: {
-    ...TYPOGRAPHY.body,
     color: COLORS.textMuted,
+    fontSize: 16,
+    fontWeight: '600',
     marginLeft: SPACING(0.5),
   },
-  savings: {
-    ...TYPOGRAPHY.caption,
-    color: COLORS.secondary,
-    fontWeight: '600',
-    backgroundColor: `${COLORS.secondary}20`,
-    paddingHorizontal: SPACING(1),
+  savingsBadge: {
+    backgroundColor: COLORS.tertiary,
     paddingVertical: SPACING(0.5),
-    borderRadius: RADIUS.sm,
+    paddingHorizontal: SPACING(1.5),
+    borderRadius: RADIUS.xs,
+    borderWidth: BORDERS.thin,
+    borderColor: COLORS.border,
+    marginBottom: SPACING(2),
+  },
+  savingsText: {
+    color: COLORS.text,
+    fontSize: 12,
+    fontWeight: '800',
   },
   packageButton: {
-    borderRadius: RADIUS.md,
-    paddingVertical: SPACING(0.5),
+    ...BRUTALIST_BUTTON,
+    width: '100%',
+    paddingVertical: SPACING(1.5),
+    alignItems: 'center',
   },
   popularButton: {
-    ...SHADOWS.glow,
+    backgroundColor: COLORS.secondary,
   },
-  packageButtonLabel: {
-    ...TYPOGRAPHY.label,
-    fontWeight: '700',
+  packageButtonDisabled: {
+    opacity: 0.7,
+  },
+  packageButtonText: {
+    color: COLORS.text,
+    fontSize: 14,
+    fontWeight: '900',
+    letterSpacing: 0.5,
   },
 
   // Features section
@@ -451,22 +440,19 @@ const styles = StyleSheet.create({
   },
   featureColumn: {
     flex: 1,
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.md,
+    ...BRUTALIST_CARD,
     padding: SPACING(2),
-    ...SHADOWS.card,
   },
   proColumn: {
-    borderWidth: 1,
     borderColor: COLORS.secondary,
-    backgroundColor: `${COLORS.secondary}05`,
   },
   featureColumnTitle: {
-    ...TYPOGRAPHY.label,
     color: COLORS.text,
+    fontSize: 12,
+    fontWeight: '900',
+    letterSpacing: 0.5,
     textAlign: 'center',
     marginBottom: SPACING(2),
-    fontWeight: '700',
   },
   proColumnTitle: {
     color: COLORS.secondary,
@@ -475,28 +461,27 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: SPACING(1.5),
+    gap: SPACING(1),
   },
   featureIcon: {
     width: 24,
     height: 24,
-    borderRadius: 12,
-    backgroundColor: `${COLORS.primary}20`,
+    borderRadius: RADIUS.xs,
+    backgroundColor: COLORS.backgroundAlt,
+    borderWidth: BORDERS.thin,
+    borderColor: COLORS.border,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: SPACING(1),
   },
   featureIconPro: {
-    backgroundColor: `${COLORS.secondary}20`,
+    backgroundColor: COLORS.secondary,
   },
   featureText: {
-    ...TYPOGRAPHY.caption,
     color: COLORS.text,
+    fontSize: 12,
+    fontWeight: '600',
     flex: 1,
     lineHeight: 16,
-  },
-  featureTextPro: {
-    color: COLORS.text,
-    fontWeight: '500',
   },
 
   // Footer
@@ -507,16 +492,20 @@ const styles = StyleSheet.create({
     gap: SPACING(2),
   },
   restoreButton: {
-    marginBottom: SPACING(1),
+    paddingVertical: SPACING(1),
+    paddingHorizontal: SPACING(2),
   },
-  restoreButtonLabel: {
-    ...TYPOGRAPHY.label,
+  restoreButtonText: {
     color: COLORS.primary,
+    fontSize: 14,
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
   termsText: {
-    ...TYPOGRAPHY.caption,
     color: COLORS.textMuted,
+    fontSize: 12,
+    fontWeight: '500',
     textAlign: 'center',
-    lineHeight: 16,
+    lineHeight: 18,
   },
 });
