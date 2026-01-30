@@ -7,7 +7,6 @@
     "scheme": "mentor-proyectos",
     "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "automatic",
-    "owner": "warlocklabs",
     "splash": {
       "image": "./assets/images/splash.png",
       "resizeMode": "contain",
@@ -16,7 +15,10 @@
     "ios": {
       "bundleIdentifier": "cl.warlocklabs.mentor",
       "infoPlist": {
-        "UIBackgroundModes": ["background-fetch", "remote-notification"]
+        "UIBackgroundModes": [
+          "background-fetch",
+          "remote-notification"
+        ]
       }
     },
     "android": {
@@ -31,20 +33,18 @@
         "android.permission.WAKE_LOCK"
       ]
     },
-    "updates": {
-      "url": "https://u.expo.dev/TU-PROJECT-ID-REAL-AQUI"
-    },
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
     "web": {
       "favicon": "./assets/images/favicon.png"
     },
-    "platforms": ["ios", "android"],
+    "platforms": [
+      "ios",
+      "android"
+    ],
     "extra": {
       "apiUrl": "http://192.168.100.16:3000/api",
+      "router": {},
       "eas": {
-        "projectId": "TU-PROJECT-ID-REAL-AQUI"
+        "projectId": "e7f85eda-52fd-4465-b71a-ff1bf6a20269"
       }
     },
     "plugins": [
@@ -58,6 +58,9 @@
         }
       ]
     ],
-    "assetBundlePatterns": ["**/*"]
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "owner": "bmartinezdev"
   }
 }
