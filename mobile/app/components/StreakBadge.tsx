@@ -18,16 +18,19 @@ type Props = {
  * - Special indicator when current streak is the user's record
  * - Subtle pulse animation when streak increases
  */
-export default function StreakBadge({ currentStreak, longestStreak, showRecord = true }: Props) {
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-  const previousStreakRef = useRef(currentStreak);
+export default function StreakBadge({ currentStreak = 0, longestStreak = 0, showRecord = true }: Props) {
+  const streak = currentStreak ?? 0;
+  const longest = longestStreak ?? 0;
 
-  const isRecord = currentStreak > 0 && currentStreak >= longestStreak;
-  const hasStreak = currentStreak > 0;
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const previousStreakRef = useRef(streak);
+
+  const isRecord = streak > 0 && streak >= longest;
+  const hasStreak = streak > 0;
 
   useEffect(() => {
     // Animate when streak increases
-    if (currentStreak > previousStreakRef.current) {
+    if (streak > previousStreakRef.current) {
       Animated.sequence([
         Animated.timing(scaleAnim, {
           toValue: 1.15,
@@ -41,8 +44,8 @@ export default function StreakBadge({ currentStreak, longestStreak, showRecord =
         }),
       ]).start();
     }
-    previousStreakRef.current = currentStreak;
-  }, [currentStreak, scaleAnim]);
+    previousStreakRef.current = streak;
+  }, [streak, scaleAnim]);
 
   return (
     <Animated.View
@@ -55,7 +58,7 @@ export default function StreakBadge({ currentStreak, longestStreak, showRecord =
     >
       <Text style={styles.fireIcon}>🔥</Text>
       <Text style={[styles.streakNumber, hasStreak && styles.streakNumberActive]}>
-        {currentStreak}
+        {streak}
       </Text>
       {isRecord && showRecord && (
         <View style={styles.recordBadge}>

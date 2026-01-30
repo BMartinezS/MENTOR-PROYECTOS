@@ -138,15 +138,13 @@ export default function DashboardScreen() {
         <AppHeader onPrimaryAction={() => router.push('/project/new')} />
 
         {/* User Stats Row - Streak and XP */}
-        {userStats && (
-          <View style={styles.userStatsRow}>
-            <StreakBadge
-              currentStreak={userStats.currentStreak}
-              longestStreak={userStats.longestStreak}
-            />
-            <XPBadge totalXP={userStats.totalXP} />
-          </View>
-        )}
+        <View style={styles.userStatsRow}>
+          <StreakBadge
+            currentStreak={userStats?.currentStreak ?? 0}
+            longestStreak={userStats?.longestStreak ?? 0}
+          />
+          <XPBadge totalXP={userStats?.totalXP ?? 0} />
+        </View>
 
         {error && (
           <View style={styles.errorBanner}>

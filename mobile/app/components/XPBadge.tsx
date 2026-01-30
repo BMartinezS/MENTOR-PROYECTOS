@@ -15,9 +15,9 @@ type Props = {
  * Displays total XP with gaming style.
  * Format: "1,250 XP"
  */
-export default function XPBadge({ totalXP, compact = false }: Props) {
+export default function XPBadge({ totalXP = 0, compact = false }: Props) {
   // Format number with thousand separators
-  const formattedXP = totalXP.toLocaleString('es-ES');
+  const formattedXP = (totalXP ?? 0).toLocaleString('es-ES');
 
   if (compact) {
     return (
