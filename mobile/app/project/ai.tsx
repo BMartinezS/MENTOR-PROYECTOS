@@ -8,9 +8,11 @@ import { COLORS, RADIUS, SPACING } from '../../constants/theme';
 import Screen from '../components/Screen';
 import SectionHeading from '../components/SectionHeading';
 import { api } from '../../src/services/api';
+import { useToast } from '../../src/contexts/ToastContext';
 
 export default function CreateProjectAiScreen() {
   const router = useRouter();
+  const { showSuccess, showError } = useToast();
 
   const [idea, setIdea] = useState('');
   const [hours, setHours] = useState('10');
@@ -32,12 +34,15 @@ export default function CreateProjectAiScreen() {
 
       const id = result.project?.id ?? (result as any).id;
       if (id) {
+        showSuccess('Proyecto creado exitosamente');
         router.replace(`/project/${id}`);
       } else {
         throw new Error('Respuesta inválida del servidor');
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'No se pudo generar el plan');
+      const errorMessage = e instanceof Error ? e.message : 'No se pudo generar el plan';
+      setError(errorMessage);
+      showError('Error al crear el proyecto');
     } finally {
       setSubmitting(false);
     }

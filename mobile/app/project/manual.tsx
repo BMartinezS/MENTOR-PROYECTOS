@@ -8,9 +8,11 @@ import { COLORS, RADIUS, SPACING } from '../../constants/theme';
 import Screen from '../components/Screen';
 import SectionHeading from '../components/SectionHeading';
 import { api } from '../../src/services/api';
+import { useToast } from '../../src/contexts/ToastContext';
 
 export default function CreateProjectManualScreen() {
   const router = useRouter();
+  const { showSuccess, showError } = useToast();
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -29,9 +31,12 @@ export default function CreateProjectManualScreen() {
         targetDate: targetDate.trim() ? targetDate.trim() : undefined,
       });
 
+      showSuccess('Proyecto creado exitosamente');
       router.replace(`/project/${project.id}`);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'No se pudo crear el proyecto');
+      const errorMessage = e instanceof Error ? e.message : 'No se pudo crear el proyecto';
+      setError(errorMessage);
+      showError('Error al crear el proyecto');
     } finally {
       setSubmitting(false);
     }

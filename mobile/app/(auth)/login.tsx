@@ -7,6 +7,7 @@ import { Link } from 'expo-router';
 import { COLORS, RADIUS, SPACING, SHADOWS, MINIMAL_CARD, MINIMAL_INPUT } from '../../constants/theme';
 import Screen from '../components/Screen';
 import { useAuth } from '../../src/contexts/AuthContext';
+import { useToast } from '../../src/contexts/ToastContext';
 
 /**
  * Minimalist Login Screen
@@ -16,6 +17,7 @@ import { useAuth } from '../../src/contexts/AuthContext';
  */
 export default function LoginScreen() {
   const { login } = useAuth();
+  const { showError } = useToast();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -28,7 +30,9 @@ export default function LoginScreen() {
       setError(null);
       await login(email.trim(), password);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'No se pudo iniciar sesión');
+      const message = e instanceof Error ? e.message : 'No se pudo iniciar sesión';
+      setError(message);
+      showError(message);
     } finally {
       setSubmitting(false);
     }

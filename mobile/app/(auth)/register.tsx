@@ -7,6 +7,7 @@ import { Link } from 'expo-router';
 import { COLORS, RADIUS, SPACING, SHADOWS, MINIMAL_CARD, MINIMAL_INPUT } from '../../constants/theme';
 import Screen from '../components/Screen';
 import { useAuth } from '../../src/contexts/AuthContext';
+import { useToast } from '../../src/contexts/ToastContext';
 
 /**
  * Minimalist Register Screen
@@ -16,6 +17,7 @@ import { useAuth } from '../../src/contexts/AuthContext';
  */
 export default function RegisterScreen() {
   const { register } = useAuth();
+  const { showError } = useToast();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -38,7 +40,9 @@ export default function RegisterScreen() {
       setError(null);
       await register(email.trim(), password, name.trim());
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'No se pudo registrar');
+      const message = e instanceof Error ? e.message : 'No se pudo registrar';
+      setError(message);
+      showError(message);
     } finally {
       setSubmitting(false);
     }
