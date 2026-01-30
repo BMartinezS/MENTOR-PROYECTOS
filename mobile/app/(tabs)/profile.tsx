@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ScrollView, StyleSheet, View, Pressable } from 'react-native';
+import { ScrollView, StyleSheet, View, Pressable, Linking } from 'react-native';
 import { Text } from 'react-native-paper';
 import {
   User,
@@ -15,6 +15,9 @@ import {
   Infinity,
   BarChart3,
   RefreshCw,
+  FileText,
+  Lock,
+  Trash2,
 } from 'lucide-react-native';
 
 import { useRouter } from 'expo-router';
@@ -48,6 +51,10 @@ export default function ProfileScreen() {
     setResetMessage('Datos reiniciados');
     await logout();
     router.replace('/(auth)/login');
+  };
+
+  const handleOpenUrl = (url: string) => {
+    Linking.openURL(url);
   };
 
   const initials = (user?.name || user?.email || 'U')
@@ -220,6 +227,66 @@ export default function ProfileScreen() {
               <View>
                 <Text style={styles.menuLabel}>Privacidad</Text>
                 <Text style={styles.menuValueMuted}>Gestiona tus datos</Text>
+              </View>
+            </View>
+            <ChevronRight size={20} color={COLORS.textLight} />
+          </Pressable>
+        </View>
+
+        {/* Legal Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Legal</Text>
+
+          <Pressable
+            style={({ pressed }) => [
+              styles.menuItemPressable,
+              pressed && styles.menuItemPressed,
+            ]}
+            onPress={() => handleOpenUrl('https://warlocklabs.cl/terms')}
+          >
+            <View style={styles.menuItemLeft}>
+              <View style={[styles.menuIconWrapper, { backgroundColor: `${COLORS.primary}12` }]}>
+                <FileText size={18} color={COLORS.primary} />
+              </View>
+              <View>
+                <Text style={styles.menuLabel}>Términos de Servicio</Text>
+              </View>
+            </View>
+            <ChevronRight size={20} color={COLORS.textLight} />
+          </Pressable>
+
+          <Pressable
+            style={({ pressed }) => [
+              styles.menuItemPressable,
+              pressed && styles.menuItemPressed,
+            ]}
+            onPress={() => handleOpenUrl('https://warlocklabs.cl/privacy')}
+          >
+            <View style={styles.menuItemLeft}>
+              <View style={[styles.menuIconWrapper, { backgroundColor: `${COLORS.tertiary}15` }]}>
+                <Lock size={18} color={COLORS.tertiary} />
+              </View>
+              <View>
+                <Text style={styles.menuLabel}>Política de Privacidad</Text>
+              </View>
+            </View>
+            <ChevronRight size={20} color={COLORS.textLight} />
+          </Pressable>
+
+          <Pressable
+            style={({ pressed }) => [
+              styles.menuItemPressable,
+              { borderBottomWidth: 0 },
+              pressed && styles.menuItemPressed,
+            ]}
+            onPress={() => handleOpenUrl('https://warlocklabs.cl/delete-account')}
+          >
+            <View style={styles.menuItemLeft}>
+              <View style={[styles.menuIconWrapper, { backgroundColor: `${COLORS.danger}12` }]}>
+                <Trash2 size={18} color={COLORS.danger} />
+              </View>
+              <View>
+                <Text style={styles.menuLabel}>Eliminar mi cuenta</Text>
               </View>
             </View>
             <ChevronRight size={20} color={COLORS.textLight} />

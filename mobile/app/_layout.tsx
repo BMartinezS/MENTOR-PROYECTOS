@@ -21,6 +21,7 @@ export default function RootLayout() {
               <Stack.Screen name="task" />
               <Stack.Screen name="weekly-review" />
               <Stack.Screen name="paywall" />
+              <Stack.Screen name="onboarding" />
             </Stack>
           </NotificationProvider>
         </PurchaseProvider>

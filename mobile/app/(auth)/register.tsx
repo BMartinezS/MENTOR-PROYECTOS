@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { ScrollView, StyleSheet, View, Pressable, TextInput as RNTextInput } from 'react-native';
-import { Text } from 'react-native-paper';
+import { ScrollView, StyleSheet, View, Pressable, TextInput as RNTextInput, Linking } from 'react-native';
+import { Text, Checkbox } from 'react-native-paper';
 
 import { Link } from 'expo-router';
 
@@ -20,8 +20,17 @@ export default function RegisterScreen() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const openTerms = () => {
+    Linking.openURL('https://warlocklabs.cl/terms');
+  };
+
+  const openPrivacy = () => {
+    Linking.openURL('https://warlocklabs.cl/privacy');
+  };
 
   const onSubmit = async () => {
     try {
@@ -99,14 +108,41 @@ export default function RegisterScreen() {
             </View>
           )}
 
+          {/* Age confirmation checkbox */}
+          <Pressable
+            onPress={() => setAgeConfirmed(!ageConfirmed)}
+            style={styles.checkboxRow}
+          >
+            <Checkbox
+              status={ageConfirmed ? 'checked' : 'unchecked'}
+              onPress={() => setAgeConfirmed(!ageConfirmed)}
+              color={COLORS.secondary}
+            />
+            <Text style={styles.checkboxLabel}>
+              Confirmo que tengo 13 anos o mas
+            </Text>
+          </Pressable>
+
+          {/* Legal links */}
+          <Text style={styles.legalText}>
+            Al registrarte aceptas los{' '}
+            <Text style={styles.legalLink} onPress={openTerms}>
+              Terminos de Servicio
+            </Text>
+            {' '}y la{' '}
+            <Text style={styles.legalLink} onPress={openPrivacy}>
+              Politica de Privacidad
+            </Text>
+          </Text>
+
           {/* Submit button */}
           <Pressable
             onPress={onSubmit}
-            disabled={submitting}
+            disabled={submitting || !ageConfirmed}
             style={({ pressed }) => [
               styles.submitButton,
               pressed && styles.submitButtonPressed,
-              submitting && styles.submitButtonDisabled,
+              (submitting || !ageConfirmed) && styles.submitButtonDisabled,
             ]}
           >
             <Text style={styles.submitButtonText}>
@@ -227,5 +263,25 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
     fontWeight: '600',
     fontSize: 14,
+  },
+  checkboxRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: -SPACING(1),
+  },
+  checkboxLabel: {
+    color: COLORS.text,
+    fontSize: 14,
+    flex: 1,
+  },
+  legalText: {
+    color: COLORS.textMuted,
+    fontSize: 13,
+    lineHeight: 20,
+    textAlign: 'center',
+  },
+  legalLink: {
+    color: COLORS.primary,
+    fontWeight: '500',
   },
 });
